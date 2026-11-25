@@ -19,3 +19,4 @@ __pycache__/
 .env
 .agents/
 Claude outputs/
+reports/*.backup-*.csv
