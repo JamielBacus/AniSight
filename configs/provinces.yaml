@@ -1,0 +1,45 @@
+# Canonical province names and known spelling variants (Region XI, Davao Region).
+region: Davao Region
+provinces:
+  - name: Davao de Oro
+    # PSA OpenSTAT labels it "Davao de Oro (Compostela Valley)".
+    aliases: ["Compostela Valley", "Davao De Oro", "Davao de Oro (Compostela Valley)"]
+  - name: Davao del Norte
+    aliases: ["Davao Del Norte"]
+  - name: Davao del Sur
+    aliases: ["Davao Del Sur"]
+  - name: Davao Oriental
+    aliases: []
+  - name: Davao Occidental
+    aliases: []
+  # Davao City is its own unit, matching PSA's separate "City of Davao" geolocation
+  # (task 3 maps PSA names to these canonical names via the aliases).
+  # `part_of` makes src/cropyield/boundaries.py subtract the city from Davao del Sur, so
+  # the two polygons never overlap. The city polygon comes from geoBoundaries PHL ADM2 if
+  # ADM2 has one, otherwise from PHL ADM3 (sources.boundaries_adm3_url in pipeline.yaml).
+  - name: Davao City
+    aliases: ["City of Davao"]
+    part_of: Davao del Sur
+
+# PSA "reported inside another province" periods (evidence:
+# .agents/tasks/psa-zero-check/report.md). Inside [first, last] (inclusive, "YYYY-Qn")
+# PSA reports `unit` as 0 and counts its production and area in `host`.
+# src/cropyield/ground_truth.py flags the unit's rows `not_reported` (values NaN) and the
+# host's rows `includes:<unit>`. Both get `reporting_unit` = host, then every unit absorbed
+# in that quarter in the order of `provinces` above, joined by "+" (e.g.
+# "Davao del Sur+Davao Occidental"); boundaries.reporting_unit_geometries builds the
+# matching combined polygons. `unit` and `host` must be canonical names from `provinces`.
+reporting_units:
+  - unit: Davao de Oro
+    host: Davao del Norte
+    first: 1987-Q1
+    last: 2001-Q4
+  - unit: Davao Occidental
+    host: Davao del Sur
+    first: 1987-Q1
+    last: 2018-Q4
+  # City of Davao reports separately again from 2025 Q2.
+  - unit: Davao City
+    host: Davao del Sur
+    first: 2021-Q1
+    last: 2025-Q1

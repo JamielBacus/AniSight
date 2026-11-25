@@ -1,0 +1,107 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Modeling dataset and rolling-origin folds (subagent: modeler)": [
+      {
+        "executionId": "ce086bf9-679b-4610-ba5b-87a18c59538b",
+        "chatSessionId": "sess_e57abc27-c57e-4e2b-bd0c-6bd5468a68b6",
+        "timestamp": 1795566943389
+      },
+      {
+        "executionId": "ce086bf9-679b-4610-ba5b-87a18c59538b",
+        "chatSessionId": "sess_e57abc27-c57e-4e2b-bd0c-6bd5468a68b6",
+        "timestamp": 1795570730046
+      }
+    ],
+    "2. Baselines B0, B1, B2 (subagent: modeler)": [
+      {
+        "executionId": "815b9876-cc82-48ab-af54-f38550222a5b",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795570846547
+      },
+      {
+        "executionId": "815b9876-cc82-48ab-af54-f38550222a5b",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795572088186
+      }
+    ],
+    "3.1 Implement `cross_validate`, `metrics`, `bootstrap_mae_diff`, `log_experiment` in `evaluate.py`": [
+      {
+        "executionId": "f54ccc56-6d20-4b10-9d26-525e435b3334",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795572128764
+      }
+    ],
+    "3.2 Add `cropyield evaluate --era modis|s2|all` and run it for the baselines only": [
+      {
+        "executionId": "f54ccc56-6d20-4b10-9d26-525e435b3334",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795572743159
+      }
+    ],
+    "4.1 Implement `AnomalyRidge` and `BoostedModel` in `satellite.py` with fold-safe anomalies": [
+      {
+        "executionId": "9e3d03bc-2393-4c63-976f-875a6e76f116",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795574314123
+      }
+    ],
+    "4.2 Evaluate feature sets `modis`, `s2`, `modis_s2`; report MAE vs B2 with bootstrap CIs": [
+      {
+        "executionId": "9e3d03bc-2393-4c63-976f-875a6e76f116",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795575600436
+      }
+    ],
+    "5. Review checkpoint (subagent: critic)": [
+      {
+        "executionId": "6b1da8a6-1882-4424-ad36-f2129982e6ab",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795576953684
+      },
+      {
+        "executionId": "6b1da8a6-1882-4424-ad36-f2129982e6ab",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795579960241
+      }
+    ],
+    "6.1 Implement `src/cropyield/rainfall.py` (download + cache + per-province monthly totals) and `cropyield rainfall`": [
+      {
+        "executionId": "56134130-051c-4546-b2f3-dd715aae3f7f",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795580001398
+      },
+      {
+        "executionId": "56134130-051c-4546-b2f3-dd715aae3f7f",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795582884393
+      }
+    ],
+    "6.2 Add rainfall columns to `features.py` (window total, halves, anomaly) with tests": [
+      {
+        "executionId": "56134130-051c-4546-b2f3-dd715aae3f7f",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795582889720
+      },
+      {
+        "executionId": "56134130-051c-4546-b2f3-dd715aae3f7f",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795600769023
+      }
+    ],
+    "6. CHIRPS rainfall (subagent: satellite-data)": [
+      {
+        "executionId": "56134130-051c-4546-b2f3-dd715aae3f7f",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795600769060
+      }
+    ],
+    "7. Evaluate rainfall feature sets (subagent: modeler)": [
+      {
+        "executionId": "4aee8916-afe6-4e59-b9f8-69f95a5d685e",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795623964931
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+# Data: rebuilt by the pipeline (see README); too large / regenerable for git
+data/raw/
+data/interim/
+data/processed/
+*.tif
+*.zarr/
+
+# Trained models (rebuilt by `cropyield select`)
+models/*.joblib
+
+# Python / tooling
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Local / editor / OS
+.DS_Store
+.env
+.agents/
+Claude outputs/

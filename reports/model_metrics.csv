@@ -1,0 +1,301 @@
+model,era,subset,level,crop,reporting_unit,n,mae,rmse,mape
+AnomalyRidge:modis,modis,all,overall,all,all,618,0.2699401806051404,0.37989520424155127,10.945600138803194
+AnomalyRidge:modis,modis,all,crop,corn,all,309,0.2092434369054479,0.27406032574021943,13.595976817005742
+AnomalyRidge:modis,modis,all,crop,palay,all,309,0.33063692430483294,0.46209487150002504,8.29522346060065
+AnomalyRidge:modis,modis,all,reporting_unit,all,Davao City,84,0.26721684416901276,0.37442255983716594,10.253886372038105
+AnomalyRidge:modis,modis,all,reporting_unit,all,Davao Occidental,62,0.3209689612182661,0.5603846170118175,14.345740807105098
+AnomalyRidge:modis,modis,all,reporting_unit,all,Davao Oriental,118,0.23536058533912274,0.3389416239944116,9.253310571553737
+AnomalyRidge:modis,modis,all,reporting_unit,all,Davao de Oro,118,0.2897530853485773,0.3609477830726536,12.599046794881366
+AnomalyRidge:modis,modis,all,reporting_unit,all,Davao del Norte,118,0.22911609787194384,0.3136174921255558,9.883255780013538
+AnomalyRidge:modis,modis,all,reporting_unit,all,Davao del Sur,28,0.2909041661871692,0.3781816944321043,9.26453413276831
+AnomalyRidge:modis,modis,all,reporting_unit,all,Davao del Sur+Davao City,34,0.23076846538908216,0.28333379484503274,8.200840207246149
+AnomalyRidge:modis,modis,all,reporting_unit,all,Davao del Sur+Davao Occidental,56,0.34796757038820897,0.43659457438629334,13.046082615068519
+AnomalyRidge:modis,modis,all,crop_unit,corn,Davao City,42,0.2541846487163846,0.31163126865732527,13.359428343244176
+AnomalyRidge:modis,modis,all,crop_unit,corn,Davao Occidental,31,0.17349499153910805,0.2202043508497336,11.837451252204733
+AnomalyRidge:modis,modis,all,crop_unit,corn,Davao Oriental,59,0.12103785361225046,0.1512130500712687,10.528138652499084
+AnomalyRidge:modis,modis,all,crop_unit,corn,Davao de Oro,59,0.2858068091647131,0.34617140612996905,18.003628820411784
+AnomalyRidge:modis,modis,all,crop_unit,corn,Davao del Norte,59,0.19102151578021587,0.2584996453709674,13.267806535416128
+AnomalyRidge:modis,modis,all,crop_unit,corn,Davao del Sur,14,0.17831381288607093,0.24242605978424095,10.442064005759493
+AnomalyRidge:modis,modis,all,crop_unit,corn,Davao del Sur+Davao City,17,0.2105734901344115,0.2600459636139783,11.281455933884546
+AnomalyRidge:modis,modis,all,crop_unit,corn,Davao del Sur+Davao Occidental,28,0.2589955275864045,0.34291429825957753,16.748262277578867
+AnomalyRidge:modis,modis,all,crop_unit,palay,Davao City,42,0.2802490396216409,0.4281009916188681,7.148344400832034
+AnomalyRidge:modis,modis,all,crop_unit,palay,Davao Occidental,31,0.4684429308974243,0.7612961853535128,16.854030362005453
+AnomalyRidge:modis,modis,all,crop_unit,palay,Davao Oriental,59,0.34968331706599504,0.45485982724360496,7.9784824906083855
+AnomalyRidge:modis,modis,all,crop_unit,palay,Davao de Oro,59,0.2936993615324416,0.3751425886088208,7.194464769350942
+AnomalyRidge:modis,modis,all,crop_unit,palay,Davao del Norte,59,0.2672106799636718,0.3604022698004692,6.49870502461095
+AnomalyRidge:modis,modis,all,crop_unit,palay,Davao del Sur,14,0.4034945194882674,0.4767309446056157,8.08700425977712
+AnomalyRidge:modis,modis,all,crop_unit,palay,Davao del Sur+Davao City,17,0.25096344064375276,0.30484779056219463,5.1202244806077495
+AnomalyRidge:modis,modis,all,crop_unit,palay,Davao del Sur+Davao Occidental,28,0.43693961319001356,0.5134583028993092,9.343902952558166
+AnomalyRidge:modis,modis,no_outliers,overall,all,all,611,0.26411525242923684,0.37126179290501715,10.710651834650667
+AnomalyRidge:modis,modis,no_outliers,crop,corn,all,307,0.20769991900475157,0.27256519428687775,13.44472748303418
+AnomalyRidge:modis,modis,no_outliers,crop,palay,all,304,0.3210873161177796,0.4494506946835386,7.949595176579159
+AnomalyRidge:modis,modis,no_outliers,reporting_unit,all,Davao City,84,0.26721684416901276,0.37442255983716594,10.253886372038105
+AnomalyRidge:modis,modis,no_outliers,reporting_unit,all,Davao Occidental,59,0.31062096434891157,0.5615491395373535,13.24011233470893
+AnomalyRidge:modis,modis,no_outliers,reporting_unit,all,Davao Oriental,118,0.23536058533912274,0.3389416239944116,9.253310571553737
+AnomalyRidge:modis,modis,no_outliers,reporting_unit,all,Davao de Oro,115,0.2746038479129361,0.3344417909903763,12.286249066454852
+AnomalyRidge:modis,modis,no_outliers,reporting_unit,all,Davao del Norte,117,0.22027305495100447,0.2924831864766823,9.641792723753536
+AnomalyRidge:modis,modis,no_outliers,reporting_unit,all,Davao del Sur,28,0.2909041661871692,0.3781816944321043,9.26453413276831
+AnomalyRidge:modis,modis,no_outliers,reporting_unit,all,Davao del Sur+Davao City,34,0.23076846538908216,0.28333379484503274,8.200840207246149
+AnomalyRidge:modis,modis,no_outliers,reporting_unit,all,Davao del Sur+Davao Occidental,56,0.34796757038820897,0.43659457438629334,13.046082615068519
+AnomalyRidge:modis,modis,no_outliers,crop_unit,corn,Davao City,42,0.2541846487163846,0.31163126865732527,13.359428343244176
+AnomalyRidge:modis,modis,no_outliers,crop_unit,corn,Davao Occidental,29,0.15468958166854085,0.19494176622273898,10.115016884657468
+AnomalyRidge:modis,modis,no_outliers,crop_unit,corn,Davao Oriental,59,0.12103785361225046,0.1512130500712687,10.528138652499084
+AnomalyRidge:modis,modis,no_outliers,crop_unit,corn,Davao de Oro,59,0.2858068091647131,0.34617140612996905,18.003628820411784
+AnomalyRidge:modis,modis,no_outliers,crop_unit,corn,Davao del Norte,59,0.19102151578021587,0.2584996453709674,13.267806535416128
+AnomalyRidge:modis,modis,no_outliers,crop_unit,corn,Davao del Sur,14,0.17831381288607093,0.24242605978424095,10.442064005759493
+AnomalyRidge:modis,modis,no_outliers,crop_unit,corn,Davao del Sur+Davao City,17,0.2105734901344115,0.2600459636139783,11.281455933884546
+AnomalyRidge:modis,modis,no_outliers,crop_unit,corn,Davao del Sur+Davao Occidental,28,0.2589955275864045,0.34291429825957753,16.748262277578867
+AnomalyRidge:modis,modis,no_outliers,crop_unit,palay,Davao City,42,0.2802490396216409,0.4281009916188681,7.148344400832034
+AnomalyRidge:modis,modis,no_outliers,crop_unit,palay,Davao Occidental,30,0.46135463427326984,0.7638246364288556,16.26103793642534
+AnomalyRidge:modis,modis,no_outliers,crop_unit,palay,Davao Oriental,59,0.34968331706599504,0.45485982724360496,7.9784824906083855
+AnomalyRidge:modis,modis,no_outliers,crop_unit,palay,Davao de Oro,56,0.26280072802267107,0.32162136474542696,6.262581111393074
+AnomalyRidge:modis,modis,no_outliers,crop_unit,palay,Davao del Norte,58,0.250028931004048,0.32340933144774653,5.95326143257952
+AnomalyRidge:modis,modis,no_outliers,crop_unit,palay,Davao del Sur,14,0.4034945194882674,0.4767309446056157,8.08700425977712
+AnomalyRidge:modis,modis,no_outliers,crop_unit,palay,Davao del Sur+Davao City,17,0.25096344064375276,0.30484779056219463,5.1202244806077495
+AnomalyRidge:modis,modis,no_outliers,crop_unit,palay,Davao del Sur+Davao Occidental,28,0.43693961319001356,0.5134583028993092,9.343902952558166
+BoostedModel:modis,modis,all,overall,all,all,618,0.3017628223631814,0.4068871448405319,12.080961069112156
+BoostedModel:modis,modis,all,crop,corn,all,309,0.24358872132303286,0.31135575997663395,15.069031306706023
+BoostedModel:modis,modis,all,crop,palay,all,309,0.35993692340332994,0.4839130996391115,9.09289083151829
+BoostedModel:modis,modis,all,reporting_unit,all,Davao City,84,0.2775387451646209,0.39358563845799627,10.137931209653583
+BoostedModel:modis,modis,all,reporting_unit,all,Davao Occidental,62,0.37895816883428707,0.545879053565833,16.712759018934232
+BoostedModel:modis,modis,all,reporting_unit,all,Davao Oriental,118,0.19261251257391987,0.244530872986988,8.778108826439885
+BoostedModel:modis,modis,all,reporting_unit,all,Davao de Oro,118,0.3105154666836251,0.3997888961289075,12.442063962294636
+BoostedModel:modis,modis,all,reporting_unit,all,Davao del Norte,118,0.2938993515337822,0.3617715915475378,12.613324872075049
+BoostedModel:modis,modis,all,reporting_unit,all,Davao del Sur,28,0.449370916159026,0.5989937436880566,12.892287936492705
+BoostedModel:modis,modis,all,reporting_unit,all,Davao del Sur+Davao City,34,0.29786859694797885,0.3665957732776566,10.278614134221598
+BoostedModel:modis,modis,all,reporting_unit,all,Davao del Sur+Davao Occidental,56,0.40931464601484857,0.5149848788991537,15.632982020814806
+BoostedModel:modis,modis,all,crop_unit,corn,Davao City,42,0.2535895488007973,0.2986643056010163,12.642063420642376
+BoostedModel:modis,modis,all,crop_unit,corn,Davao Occidental,31,0.1712606956790884,0.22495313620729646,11.531512637862878
+BoostedModel:modis,modis,all,crop_unit,corn,Davao Oriental,59,0.1409154979801561,0.16822953358387047,12.061157529359724
+BoostedModel:modis,modis,all,crop_unit,corn,Davao de Oro,59,0.2901424909834566,0.36353915657269603,16.93951757749982
+BoostedModel:modis,modis,all,crop_unit,corn,Davao del Norte,59,0.28644731367113346,0.33471690732947534,17.95029989048313
+BoostedModel:modis,modis,all,crop_unit,corn,Davao del Sur,14,0.2011194736243131,0.25425947787797987,12.192465927731355
+BoostedModel:modis,modis,all,crop_unit,corn,Davao del Sur+Davao City,17,0.2757241346249241,0.3342963275637946,14.010552886712544
+BoostedModel:modis,modis,all,crop_unit,corn,Davao del Sur+Davao Occidental,28,0.33833130351135005,0.4534722363320947,21.03234540806649
+BoostedModel:modis,modis,all,crop_unit,palay,Davao City,42,0.3014879415284445,0.4697009071320172,7.633798998664791
+BoostedModel:modis,modis,all,crop_unit,palay,Davao Occidental,31,0.5866556419894856,0.7384876226141915,21.894005400005582
+BoostedModel:modis,modis,all,crop_unit,palay,Davao Oriental,59,0.24430952716768367,0.30214155576105434,5.495060123520049
+BoostedModel:modis,modis,all,crop_unit,palay,Davao de Oro,59,0.3308884423837938,0.4330145546911253,7.94461034708945
+BoostedModel:modis,modis,all,crop_unit,palay,Davao del Norte,59,0.3013513893964311,0.38693922113100465,7.276349853666966
+BoostedModel:modis,modis,all,crop_unit,palay,Davao del Sur,14,0.6976223586937389,0.8080464886775286,13.592109945254055
+BoostedModel:modis,modis,all,crop_unit,palay,Davao del Sur+Davao City,17,0.3200130592710336,0.39627122952271737,6.546675381730653
+BoostedModel:modis,modis,all,crop_unit,palay,Davao del Sur+Davao Occidental,28,0.480297988518347,0.5698962904472362,10.233618633563125
+BoostedModel:modis,modis,no_outliers,overall,all,all,611,0.2967773815615289,0.39983575071509253,11.870347532884939
+BoostedModel:modis,modis,no_outliers,crop,corn,all,307,0.2423032848598659,0.31028932966012174,14.939441696346403
+BoostedModel:modis,modis,no_outliers,crop,palay,all,304,0.3517890515859057,0.4733765008940567,8.770966255968265
+BoostedModel:modis,modis,no_outliers,reporting_unit,all,Davao City,84,0.2775387451646209,0.39358563845799627,10.137931209653583
+BoostedModel:modis,modis,no_outliers,reporting_unit,all,Davao Occidental,59,0.3665267912421467,0.5383657960547693,15.525217830665403
+BoostedModel:modis,modis,no_outliers,reporting_unit,all,Davao Oriental,118,0.19261251257391987,0.244530872986988,8.778108826439885
+BoostedModel:modis,modis,no_outliers,reporting_unit,all,Davao de Oro,115,0.2981130940549207,0.37838932341657205,12.201630046938867
+BoostedModel:modis,modis,no_outliers,reporting_unit,all,Davao del Norte,117,0.2884600378754307,0.35298759625171566,12.481196889775232
+BoostedModel:modis,modis,no_outliers,reporting_unit,all,Davao del Sur,28,0.449370916159026,0.5989937436880566,12.892287936492705
+BoostedModel:modis,modis,no_outliers,reporting_unit,all,Davao del Sur+Davao City,34,0.29786859694797885,0.3665957732776566,10.278614134221598
+BoostedModel:modis,modis,no_outliers,reporting_unit,all,Davao del Sur+Davao Occidental,56,0.40931464601484857,0.5149848788991537,15.632982020814806
+BoostedModel:modis,modis,no_outliers,crop_unit,corn,Davao City,42,0.2535895488007973,0.2986643056010163,12.642063420642376
+BoostedModel:modis,modis,no_outliers,crop_unit,corn,Davao Occidental,29,0.1526646596280493,0.20097294041010536,9.91568340620459
+BoostedModel:modis,modis,no_outliers,crop_unit,corn,Davao Oriental,59,0.1409154979801561,0.16822953358387047,12.061157529359724
+BoostedModel:modis,modis,no_outliers,crop_unit,corn,Davao de Oro,59,0.2901424909834566,0.36353915657269603,16.93951757749982
+BoostedModel:modis,modis,no_outliers,crop_unit,corn,Davao del Norte,59,0.28644731367113346,0.33471690732947534,17.95029989048313
+BoostedModel:modis,modis,no_outliers,crop_unit,corn,Davao del Sur,14,0.2011194736243131,0.25425947787797987,12.192465927731355
+BoostedModel:modis,modis,no_outliers,crop_unit,corn,Davao del Sur+Davao City,17,0.2757241346249241,0.3342963275637946,14.010552886712544
+BoostedModel:modis,modis,no_outliers,crop_unit,corn,Davao del Sur+Davao Occidental,28,0.33833130351135005,0.4534722363320947,21.03234540806649
+BoostedModel:modis,modis,no_outliers,crop_unit,palay,Davao City,42,0.3014879415284445,0.4697009071320172,7.633798998664791
+BoostedModel:modis,modis,no_outliers,crop_unit,palay,Davao Occidental,30,0.5732601851357744,0.7286771697353137,20.947767774310847
+BoostedModel:modis,modis,no_outliers,crop_unit,palay,Davao Oriental,59,0.24430952716768367,0.30214155576105434,5.495060123520049
+BoostedModel:modis,modis,no_outliers,crop_unit,palay,Davao de Oro,56,0.3065106937194989,0.3934291283374899,7.209927112955003
+BoostedModel:modis,modis,no_outliers,crop_unit,palay,Davao del Norte,58,0.2905074642211814,0.37065039221627855,6.917799009744782
+BoostedModel:modis,modis,no_outliers,crop_unit,palay,Davao del Sur,14,0.6976223586937389,0.8080464886775286,13.592109945254055
+BoostedModel:modis,modis,no_outliers,crop_unit,palay,Davao del Sur+Davao City,17,0.3200130592710336,0.39627122952271737,6.546675381730653
+BoostedModel:modis,modis,no_outliers,crop_unit,palay,Davao del Sur+Davao Occidental,28,0.480297988518347,0.5698962904472362,10.233618633563125
+AnomalyRidge:s2,s2,all,overall,all,all,242,0.240283127364903,0.3278932702248562,9.086637116652081
+AnomalyRidge:s2,s2,all,crop,corn,all,121,0.1832387947691145,0.23866900549681908,10.888303512800293
+AnomalyRidge:s2,s2,all,crop,palay,all,121,0.29732745996069154,0.3975740171749915,7.284970720503869
+AnomalyRidge:s2,s2,all,reporting_unit,all,Davao City,12,0.6271338141364428,0.8003899709733172,19.351781842161834
+AnomalyRidge:s2,s2,all,reporting_unit,all,Davao Occidental,46,0.21584030985190802,0.3028270501528267,10.0723254742802
+AnomalyRidge:s2,s2,all,reporting_unit,all,Davao Oriental,46,0.1510440579604557,0.19292700503360238,6.066118721293563
+AnomalyRidge:s2,s2,all,reporting_unit,all,Davao de Oro,46,0.19371317348308598,0.23924740211420353,7.186980452865696
+AnomalyRidge:s2,s2,all,reporting_unit,all,Davao del Norte,46,0.2332984916702903,0.28449324261747727,8.950277657139162
+AnomalyRidge:s2,s2,all,reporting_unit,all,Davao del Sur,12,0.3244064651160898,0.35622119508021405,10.990746991762775
+AnomalyRidge:s2,s2,all,reporting_unit,all,Davao del Sur+Davao City,34,0.3003181163191795,0.3646730907433996,10.299221475473292
+AnomalyRidge:s2,s2,all,crop_unit,corn,Davao City,6,0.4301084267244282,0.4969946812933427,21.133773256271684
+AnomalyRidge:s2,s2,all,crop_unit,corn,Davao Occidental,23,0.1339737914890438,0.17676688786758468,9.37288131349747
+AnomalyRidge:s2,s2,all,crop_unit,corn,Davao Oriental,23,0.10293696197740008,0.121138083524392,7.73816070200318
+AnomalyRidge:s2,s2,all,crop_unit,corn,Davao de Oro,23,0.1493967575601469,0.18386018015284372,8.973698143690873
+AnomalyRidge:s2,s2,all,crop_unit,corn,Davao del Norte,23,0.205745266045567,0.2410553020557734,11.80782717553581
+AnomalyRidge:s2,s2,all,crop_unit,corn,Davao del Sur,6,0.27698319444302216,0.3237023149588278,14.853707392862662
+AnomalyRidge:s2,s2,all,crop_unit,corn,Davao del Sur+Davao City,17,0.2536547392587367,0.3078985087761965,13.531223085605927
+AnomalyRidge:s2,s2,all,crop_unit,palay,Davao City,6,0.8241592015484575,1.016978120726038,17.569790428051988
+AnomalyRidge:s2,s2,all,crop_unit,palay,Davao Occidental,23,0.2977068282147723,0.3900793662347882,10.771769635062931
+AnomalyRidge:s2,s2,all,crop_unit,palay,Davao Oriental,23,0.19915115394351132,0.24447335900361147,4.394076740583944
+AnomalyRidge:s2,s2,all,crop_unit,palay,Davao de Oro,23,0.238029589406025,0.2840318168638061,5.400262762040518
+AnomalyRidge:s2,s2,all,crop_unit,palay,Davao del Norte,23,0.2608517172950134,0.32212598706222606,6.092728138742514
+AnomalyRidge:s2,s2,all,crop_unit,palay,Davao del Sur,6,0.3718297357891574,0.38601022128830703,7.127786590662888
+AnomalyRidge:s2,s2,all,crop_unit,palay,Davao del Sur+Davao City,17,0.3469814933796222,0.41372869675438506,7.06721986534066
+AnomalyRidge:s2,s2,no_outliers,overall,all,all,239,0.23672974911395828,0.3245503033233782,8.864771544918522
+AnomalyRidge:s2,s2,no_outliers,crop,corn,all,120,0.1814153040317548,0.23683432703938012,10.66081608512836
+AnomalyRidge:s2,s2,no_outliers,crop,palay,all,119,0.29250902146576013,0.39368655298197197,7.053634193446411
+AnomalyRidge:s2,s2,no_outliers,reporting_unit,all,Davao City,12,0.6271338141364428,0.8003899709733172,19.351781842161834
+AnomalyRidge:s2,s2,no_outliers,reporting_unit,all,Davao Occidental,44,0.20320615867019007,0.29052865727088933,8.985394548696938
+AnomalyRidge:s2,s2,no_outliers,reporting_unit,all,Davao Oriental,46,0.1510440579604557,0.19292700503360238,6.066118721293563
+AnomalyRidge:s2,s2,no_outliers,reporting_unit,all,Davao de Oro,45,0.18507294373001915,0.22576659780406613,7.072998433594854
+AnomalyRidge:s2,s2,no_outliers,reporting_unit,all,Davao del Norte,46,0.2332984916702903,0.28449324261747727,8.950277657139162
+AnomalyRidge:s2,s2,no_outliers,reporting_unit,all,Davao del Sur,12,0.3244064651160898,0.35622119508021405,10.990746991762775
+AnomalyRidge:s2,s2,no_outliers,reporting_unit,all,Davao del Sur+Davao City,34,0.3003181163191795,0.3646730907433996,10.299221475473292
+AnomalyRidge:s2,s2,no_outliers,crop_unit,corn,Davao City,6,0.4301084267244282,0.4969946812933427,21.133773256271684
+AnomalyRidge:s2,s2,no_outliers,crop_unit,corn,Davao Occidental,22,0.12178816004526016,0.1591197191089443,8.063157971682257
+AnomalyRidge:s2,s2,no_outliers,crop_unit,corn,Davao Oriental,23,0.10293696197740008,0.121138083524392,7.73816070200318
+AnomalyRidge:s2,s2,no_outliers,crop_unit,corn,Davao de Oro,23,0.1493967575601469,0.18386018015284372,8.973698143690873
+AnomalyRidge:s2,s2,no_outliers,crop_unit,corn,Davao del Norte,23,0.205745266045567,0.2410553020557734,11.80782717553581
+AnomalyRidge:s2,s2,no_outliers,crop_unit,corn,Davao del Sur,6,0.27698319444302216,0.3237023149588278,14.853707392862662
+AnomalyRidge:s2,s2,no_outliers,crop_unit,corn,Davao del Sur+Davao City,17,0.2536547392587367,0.3078985087761965,13.531223085605927
+AnomalyRidge:s2,s2,no_outliers,crop_unit,palay,Davao City,6,0.8241592015484575,1.016978120726038,17.569790428051988
+AnomalyRidge:s2,s2,no_outliers,crop_unit,palay,Davao Occidental,22,0.2846241572951201,0.37880696453727253,9.907631125711623
+AnomalyRidge:s2,s2,no_outliers,crop_unit,palay,Davao Oriental,23,0.19915115394351132,0.24447335900361147,4.394076740583944
+AnomalyRidge:s2,s2,no_outliers,crop_unit,palay,Davao de Oro,22,0.22237077472579464,0.26252013224329385,5.085903282130834
+AnomalyRidge:s2,s2,no_outliers,crop_unit,palay,Davao del Norte,23,0.2608517172950134,0.32212598706222606,6.092728138742514
+AnomalyRidge:s2,s2,no_outliers,crop_unit,palay,Davao del Sur,6,0.3718297357891574,0.38601022128830703,7.127786590662888
+AnomalyRidge:s2,s2,no_outliers,crop_unit,palay,Davao del Sur+Davao City,17,0.3469814933796222,0.41372869675438506,7.06721986534066
+BoostedModel:s2,s2,all,overall,all,all,242,0.2385330574018408,0.3319552776317907,8.978305404806525
+BoostedModel:s2,s2,all,crop,corn,all,121,0.17573978554523217,0.2388085654024449,10.299636555854697
+BoostedModel:s2,s2,all,crop,palay,all,121,0.30132632925844943,0.4041770426256601,7.656974253758355
+BoostedModel:s2,s2,all,reporting_unit,all,Davao City,12,0.5284760919907373,0.7284938728099019,15.27211185495636
+BoostedModel:s2,s2,all,reporting_unit,all,Davao Occidental,46,0.28050845988517187,0.37197190798364327,12.868115370952527
+BoostedModel:s2,s2,all,reporting_unit,all,Davao Oriental,46,0.1679088551418865,0.2240116883489839,6.2792642546814115
+BoostedModel:s2,s2,all,reporting_unit,all,Davao de Oro,46,0.19555506021815053,0.2591644265607387,7.303779939626981
+BoostedModel:s2,s2,all,reporting_unit,all,Davao del Norte,46,0.18950045277269953,0.24858048844282715,7.024118045494341
+BoostedModel:s2,s2,all,reporting_unit,all,Davao del Sur,12,0.34885087068295234,0.42428158262756155,10.280759138031696
+BoostedModel:s2,s2,all,reporting_unit,all,Davao del Sur+Davao City,34,0.2605095955981593,0.32236603728058083,9.59566723389942
+BoostedModel:s2,s2,all,crop_unit,corn,Davao City,6,0.33610833874960583,0.5014926733027493,15.142645003255332
+BoostedModel:s2,s2,all,crop_unit,corn,Davao Occidental,23,0.15615363283921385,0.19462168569842594,10.972608892352426
+BoostedModel:s2,s2,all,crop_unit,corn,Davao Oriental,23,0.09704777289859691,0.11839446699950712,7.354462738664457
+BoostedModel:s2,s2,all,crop_unit,corn,Davao de Oro,23,0.15994969665647668,0.20398210586902393,9.42335556382651
+BoostedModel:s2,s2,all,crop_unit,corn,Davao del Norte,23,0.16092470164405,0.20543182496851378,8.845051503603807
+BoostedModel:s2,s2,all,crop_unit,corn,Davao del Sur,6,0.2269254049487989,0.3085135403370797,11.787314530742547
+BoostedModel:s2,s2,all,crop_unit,corn,Davao del Sur+Davao City,17,0.275445182111818,0.3161614590234237,14.292956234714438
+BoostedModel:s2,s2,all,crop_unit,palay,Davao City,6,0.7208438452318688,0.8999509675903464,15.40157870665739
+BoostedModel:s2,s2,all,crop_unit,palay,Davao Occidental,23,0.40486328693112994,0.4887213931412119,14.763621849552628
+BoostedModel:s2,s2,all,crop_unit,palay,Davao Oriental,23,0.23876993738517607,0.2938455771622694,5.204065770698367
+BoostedModel:s2,s2,all,crop_unit,palay,Davao de Oro,23,0.23116042377982438,0.30450566575082205,5.184204315427452
+BoostedModel:s2,s2,all,crop_unit,palay,Davao del Norte,23,0.21807620390134907,0.2852758029680312,5.203184587384877
+BoostedModel:s2,s2,all,crop_unit,palay,Davao del Sur,6,0.47077633641710587,0.5146349367683638,8.774203745320841
+BoostedModel:s2,s2,all,crop_unit,palay,Davao del Sur+Davao City,17,0.24557400908450042,0.32845343020304973,4.898378233084403
+BoostedModel:s2,s2,no_outliers,overall,all,all,239,0.23363704793834927,0.3261083662830886,8.634147744403627
+BoostedModel:s2,s2,no_outliers,crop,corn,all,120,0.17212226388334226,0.23324996437209566,9.902784751971126
+BoostedModel:s2,s2,no_outliers,crop,palay,all,119,0.29566876295180167,0.39840214262197754,7.354849921646485
+BoostedModel:s2,s2,no_outliers,reporting_unit,all,Davao City,12,0.5284760919907373,0.7284938728099019,15.27211185495636
+BoostedModel:s2,s2,no_outliers,reporting_unit,all,Davao Occidental,44,0.26082489768636513,0.3478797872235207,11.19186107867615
+BoostedModel:s2,s2,no_outliers,reporting_unit,all,Davao Oriental,46,0.1679088551418865,0.2240116883489839,6.2792642546814115
+BoostedModel:s2,s2,no_outliers,reporting_unit,all,Davao de Oro,45,0.18970846650161685,0.25295075264127315,7.250593328315444
+BoostedModel:s2,s2,no_outliers,reporting_unit,all,Davao del Norte,46,0.18950045277269953,0.24858048844282715,7.024118045494341
+BoostedModel:s2,s2,no_outliers,reporting_unit,all,Davao del Sur,12,0.34885087068295234,0.42428158262756155,10.280759138031696
+BoostedModel:s2,s2,no_outliers,reporting_unit,all,Davao del Sur+Davao City,34,0.2605095955981593,0.32236603728058083,9.59566723389942
+BoostedModel:s2,s2,no_outliers,crop_unit,corn,Davao City,6,0.33610833874960583,0.5014926733027493,15.142645003255332
+BoostedModel:s2,s2,no_outliers,crop_unit,corn,Davao Occidental,22,0.13553141683317707,0.1506466482754601,8.838552341010125
+BoostedModel:s2,s2,no_outliers,crop_unit,corn,Davao Oriental,23,0.09704777289859691,0.11839446699950712,7.354462738664457
+BoostedModel:s2,s2,no_outliers,crop_unit,corn,Davao de Oro,23,0.15994969665647668,0.20398210586902393,9.42335556382651
+BoostedModel:s2,s2,no_outliers,crop_unit,corn,Davao del Norte,23,0.16092470164405,0.20543182496851378,8.845051503603807
+BoostedModel:s2,s2,no_outliers,crop_unit,corn,Davao del Sur,6,0.2269254049487989,0.3085135403370797,11.787314530742547
+BoostedModel:s2,s2,no_outliers,crop_unit,corn,Davao del Sur+Davao City,17,0.275445182111818,0.3161614590234237,14.292956234714438
+BoostedModel:s2,s2,no_outliers,crop_unit,palay,Davao City,6,0.7208438452318688,0.8999509675903464,15.40157870665739
+BoostedModel:s2,s2,no_outliers,crop_unit,palay,Davao Occidental,22,0.3861183785395532,0.46834418975870074,13.545169816342176
+BoostedModel:s2,s2,no_outliers,crop_unit,palay,Davao Oriental,23,0.23876993738517607,0.2938455771622694,5.204065770698367
+BoostedModel:s2,s2,no_outliers,crop_unit,palay,Davao de Oro,22,0.22081990770335425,0.29559521292876756,4.979069173008419
+BoostedModel:s2,s2,no_outliers,crop_unit,palay,Davao del Norte,23,0.21807620390134907,0.2852758029680312,5.203184587384877
+BoostedModel:s2,s2,no_outliers,crop_unit,palay,Davao del Sur,6,0.47077633641710587,0.5146349367683638,8.774203745320841
+BoostedModel:s2,s2,no_outliers,crop_unit,palay,Davao del Sur+Davao City,17,0.24557400908450042,0.32845343020304973,4.898378233084403
+AnomalyRidge:modis_s2,s2,all,overall,all,all,242,0.2511035684219388,0.34675532170895873,9.64061820801472
+AnomalyRidge:modis_s2,s2,all,crop,corn,all,121,0.19347064778939616,0.24829740256720323,11.689561649694951
+AnomalyRidge:modis_s2,s2,all,crop,palay,all,121,0.30873648905448153,0.42287930446564437,7.591674766334487
+AnomalyRidge:modis_s2,s2,all,reporting_unit,all,Davao City,12,0.6048787608346619,0.7736455570540326,19.569208861671463
+AnomalyRidge:modis_s2,s2,all,reporting_unit,all,Davao Occidental,46,0.23456304269332098,0.3335584094020104,11.736096786927392
+AnomalyRidge:modis_s2,s2,all,reporting_unit,all,Davao Oriental,46,0.2059338368925255,0.2644783934816471,7.795935124098005
+AnomalyRidge:modis_s2,s2,all,reporting_unit,all,Davao de Oro,46,0.19775478822627876,0.2774366975509019,6.941707897776834
+AnomalyRidge:modis_s2,s2,all,reporting_unit,all,Davao del Norte,46,0.24489798460240464,0.30553392141112656,9.252337686146301
+AnomalyRidge:modis_s2,s2,all,reporting_unit,all,Davao del Sur,12,0.29138397985198655,0.36119677369951303,10.783602534762322
+AnomalyRidge:modis_s2,s2,all,reporting_unit,all,Davao del Sur+Davao City,34,0.2760890193765013,0.3506101625718845,9.570479553374254
+AnomalyRidge:modis_s2,s2,all,crop_unit,corn,Davao City,6,0.4705482095480397,0.5216818225912961,23.545777030987225
+AnomalyRidge:modis_s2,s2,all,crop_unit,corn,Davao Occidental,23,0.17745481193794155,0.2206304983601887,12.618745418818438
+AnomalyRidge:modis_s2,s2,all,crop_unit,corn,Davao Oriental,23,0.12188070635444889,0.14333686890062416,9.189709437723046
+AnomalyRidge:modis_s2,s2,all,crop_unit,corn,Davao de Oro,23,0.13513133435702226,0.16847660598041134,8.052613865364695
+AnomalyRidge:modis_s2,s2,all,crop_unit,corn,Davao del Norte,23,0.20601157243876853,0.24225717184772458,11.926236246388857
+AnomalyRidge:modis_s2,s2,all,crop_unit,corn,Davao del Sur,6,0.29124538752972223,0.3483899562323211,15.802132227317415
+AnomalyRidge:modis_s2,s2,all,crop_unit,corn,Davao del Sur+Davao City,17,0.2416578248836585,0.29742686565381954,12.778911164263263
+AnomalyRidge:modis_s2,s2,all,crop_unit,palay,Davao City,6,0.739209312121284,0.961718759241345,15.592640692355694
+AnomalyRidge:modis_s2,s2,all,crop_unit,palay,Davao Occidental,23,0.2916712734487003,0.41694676897528926,10.85344815503635
+AnomalyRidge:modis_s2,s2,all,crop_unit,palay,Davao Oriental,23,0.28998696743060215,0.3454738532089385,6.402160810472961
+AnomalyRidge:modis_s2,s2,all,crop_unit,palay,Davao de Oro,23,0.2603782420955353,0.3543414674198074,5.830801930188971
+AnomalyRidge:modis_s2,s2,all,crop_unit,palay,Davao del Norte,23,0.2837843967660407,0.3577896266719635,6.578439125903744
+AnomalyRidge:modis_s2,s2,all,crop_unit,palay,Davao del Sur,6,0.29152257217425087,0.3735647963316616,5.7650728422072275
+AnomalyRidge:modis_s2,s2,all,crop_unit,palay,Davao del Sur+Davao City,17,0.31052021386934414,0.3967268982369501,6.362047942485237
+AnomalyRidge:modis_s2,s2,no_outliers,overall,all,all,239,0.24678594017940433,0.3424629786315387,9.343544697960478
+AnomalyRidge:modis_s2,s2,no_outliers,crop,corn,all,120,0.19025670633423272,0.24366021900963789,11.32859021577792
+AnomalyRidge:modis_s2,s2,no_outliers,crop,palay,all,119,0.3037902096031069,0.41913974369772566,7.341818125371466
+AnomalyRidge:modis_s2,s2,no_outliers,reporting_unit,all,Davao City,12,0.6048787608346619,0.7736455570540326,19.569208861671463
+AnomalyRidge:modis_s2,s2,no_outliers,reporting_unit,all,Davao Occidental,44,0.21721583032393907,0.31463760044797384,10.264231679889829
+AnomalyRidge:modis_s2,s2,no_outliers,reporting_unit,all,Davao Oriental,46,0.2059338368925255,0.2644783934816471,7.795935124098005
+AnomalyRidge:modis_s2,s2,no_outliers,reporting_unit,all,Davao de Oro,45,0.18986444072926037,0.2681235681071899,6.836231067871877
+AnomalyRidge:modis_s2,s2,no_outliers,reporting_unit,all,Davao del Norte,46,0.24489798460240464,0.30553392141112656,9.252337686146301
+AnomalyRidge:modis_s2,s2,no_outliers,reporting_unit,all,Davao del Sur,12,0.29138397985198655,0.36119677369951303,10.783602534762322
+AnomalyRidge:modis_s2,s2,no_outliers,reporting_unit,all,Davao del Sur+Davao City,34,0.2760890193765013,0.3506101625718845,9.570479553374254
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,corn,Davao City,6,0.4705482095480397,0.5216818225912961,23.545777030987225
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,corn,Davao Occidental,22,0.15919622964380212,0.18879792602581402,10.692045950594787
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,corn,Davao Oriental,23,0.12188070635444889,0.14333686890062416,9.189709437723046
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,corn,Davao de Oro,23,0.13513133435702226,0.16847660598041134,8.052613865364695
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,corn,Davao del Norte,23,0.20601157243876853,0.24225717184772458,11.926236246388857
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,corn,Davao del Sur,6,0.29124538752972223,0.3483899562323211,15.802132227317415
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,corn,Davao del Sur+Davao City,17,0.2416578248836585,0.29742686565381954,12.778911164263263
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,palay,Davao City,6,0.739209312121284,0.961718759241345,15.592640692355694
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,palay,Davao Occidental,22,0.27523543100407594,0.4029255295456828,9.836417409184875
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,palay,Davao Oriental,23,0.28998696743060215,0.3454738532089385,6.402160810472961
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,palay,Davao de Oro,22,0.2470854155729639,0.3425984075158206,5.564558143220292
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,palay,Davao del Norte,23,0.2837843967660407,0.3577896266719635,6.578439125903744
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,palay,Davao del Sur,6,0.29152257217425087,0.3735647963316616,5.7650728422072275
+AnomalyRidge:modis_s2,s2,no_outliers,crop_unit,palay,Davao del Sur+Davao City,17,0.31052021386934414,0.3967268982369501,6.362047942485237
+BoostedModel:modis_s2,s2,all,overall,all,all,242,0.25778031248609007,0.3554394972902585,9.779288519020463
+BoostedModel:modis_s2,s2,all,crop,corn,all,121,0.19074703112179,0.24643863411726685,11.191833802517802
+BoostedModel:modis_s2,s2,all,crop,palay,all,121,0.32481359385039027,0.43811239663163976,8.366743235523122
+BoostedModel:modis_s2,s2,all,reporting_unit,all,Davao City,12,0.4917068852822975,0.6571351850958798,14.32444068193763
+BoostedModel:modis_s2,s2,all,reporting_unit,all,Davao Occidental,46,0.31642473804314486,0.4487871155699277,14.42963909449763
+BoostedModel:modis_s2,s2,all,reporting_unit,all,Davao Oriental,46,0.19497023375372907,0.25853136408068483,7.073370385604445
+BoostedModel:modis_s2,s2,all,reporting_unit,all,Davao de Oro,46,0.20183251625709403,0.27680220849728343,7.5372254938838745
+BoostedModel:modis_s2,s2,all,reporting_unit,all,Davao del Norte,46,0.2056210069713537,0.25550760033647957,8.3963600084975
+BoostedModel:modis_s2,s2,all,reporting_unit,all,Davao del Sur,12,0.4320833032143694,0.5220680529903103,13.101297182862897
+BoostedModel:modis_s2,s2,all,reporting_unit,all,Davao del Sur+Davao City,34,0.26559772319144165,0.3093656502900058,9.276341118561977
+BoostedModel:modis_s2,s2,all,crop_unit,corn,Davao City,6,0.31314705136977733,0.4523317379943257,14.22347370242715
+BoostedModel:modis_s2,s2,all,crop_unit,corn,Davao Occidental,23,0.1639353452421901,0.2107169873142029,11.507442406075928
+BoostedModel:modis_s2,s2,all,crop_unit,corn,Davao Oriental,23,0.1051247067122581,0.12410089793270507,7.983658016303355
+BoostedModel:modis_s2,s2,all,crop_unit,corn,Davao de Oro,23,0.16969544448289237,0.21565382090792284,9.763815924395834
+BoostedModel:modis_s2,s2,all,crop_unit,corn,Davao del Norte,23,0.22207862577020943,0.254671815996205,12.344186258091073
+BoostedModel:modis_s2,s2,all,crop_unit,corn,Davao del Sur,6,0.2926617664582676,0.35148013770817355,15.545878092616213
+BoostedModel:modis_s2,s2,all,crop_unit,corn,Davao del Sur+Davao City,17,0.2497854734114514,0.2913334091126066,12.871554083674807
+BoostedModel:modis_s2,s2,all,crop_unit,palay,Davao City,6,0.6702667191948177,0.8118185153006952,14.425407661448117
+BoostedModel:modis_s2,s2,all,crop_unit,palay,Davao Occidental,23,0.4689141308440996,0.5986802998766347,17.351835782919327
+BoostedModel:modis_s2,s2,all,crop_unit,palay,Davao Oriental,23,0.28481576079519993,0.34391263361373564,6.163082754905538
+BoostedModel:modis_s2,s2,all,crop_unit,palay,Davao de Oro,23,0.23396958803129567,0.3266991808770886,5.310635063371915
+BoostedModel:modis_s2,s2,all,crop_unit,palay,Davao del Norte,23,0.18916338817249806,0.2563406596632837,4.448533758903926
+BoostedModel:modis_s2,s2,all,crop_unit,palay,Davao del Sur,6,0.5715048399704713,0.6492856202803433,10.656716273109579
+BoostedModel:modis_s2,s2,all,crop_unit,palay,Davao del Sur+Davao City,17,0.2814099729714319,0.32640321060544575,5.6811281534491425
+BoostedModel:modis_s2,s2,no_outliers,overall,all,all,239,0.25202697317419687,0.3483526276854647,9.405680116565504
+BoostedModel:modis_s2,s2,no_outliers,crop,corn,all,120,0.18697053585254075,0.240380440766091,10.77543988248807
+BoostedModel:modis_s2,s2,no_outliers,crop,palay,all,119,0.317630103246455,0.4306396694358361,8.024409764374687
+BoostedModel:modis_s2,s2,no_outliers,reporting_unit,all,Davao City,12,0.4917068852822975,0.6571351850958798,14.32444068193763
+BoostedModel:modis_s2,s2,no_outliers,reporting_unit,all,Davao Occidental,44,0.29654996046130583,0.4291834362296689,12.697424890424475
+BoostedModel:modis_s2,s2,no_outliers,reporting_unit,all,Davao Oriental,46,0.19497023375372907,0.25853136408068483,7.073370385604445
+BoostedModel:modis_s2,s2,no_outliers,reporting_unit,all,Davao de Oro,45,0.1920721423225059,0.26303996402617175,7.4035289365128
+BoostedModel:modis_s2,s2,no_outliers,reporting_unit,all,Davao del Norte,46,0.2056210069713537,0.25550760033647957,8.3963600084975
+BoostedModel:modis_s2,s2,no_outliers,reporting_unit,all,Davao del Sur,12,0.4320833032143694,0.5220680529903103,13.101297182862897
+BoostedModel:modis_s2,s2,no_outliers,reporting_unit,all,Davao del Sur+Davao City,34,0.26559772319144165,0.3093656502900058,9.276341118561977
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,corn,Davao City,6,0.31314705136977733,0.4523317379943257,14.22347370242715
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,corn,Davao Occidental,22,0.1421175671426669,0.1660499145624241,9.250548687893657
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,corn,Davao Oriental,23,0.1051247067122581,0.12410089793270507,7.983658016303355
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,corn,Davao de Oro,23,0.16969544448289237,0.21565382090792284,9.763815924395834
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,corn,Davao del Norte,23,0.22207862577020943,0.254671815996205,12.344186258091073
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,corn,Davao del Sur,6,0.2926617664582676,0.35148013770817355,15.545878092616213
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,corn,Davao del Sur+Davao City,17,0.2497854734114514,0.2913334091126066,12.871554083674807
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,palay,Davao City,6,0.6702667191948177,0.8118185153006952,14.425407661448117
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,palay,Davao Occidental,22,0.4509823537799447,0.5838015670941834,16.144301092955292
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,palay,Davao Oriental,23,0.28481576079519993,0.34391263361373564,6.163082754905538
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,palay,Davao de Oro,22,0.21546596279119276,0.30480246207471284,4.935956176453267
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,palay,Davao del Norte,23,0.18916338817249806,0.2563406596632837,4.448533758903926
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,palay,Davao del Sur,6,0.5715048399704713,0.6492856202803433,10.656716273109579
+BoostedModel:modis_s2,s2,no_outliers,crop_unit,palay,Davao del Sur+Davao City,17,0.2814099729714319,0.32640321060544575,5.6811281534491425

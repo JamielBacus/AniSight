@@ -1,0 +1,28 @@
+name: cropyield
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pandas
+  - numpy
+  - pyarrow
+  - geopandas
+  - shapely
+  - rasterio
+  - xarray
+  - rioxarray
+  - dask
+  - pystac-client
+  - planetary-computer
+  - odc-stac
+  - scikit-learn
+  - xgboost
+  - matplotlib
+  - pyyaml
+  - requests
+  - typer
+  - pytest
+  - ipykernel
+  - pip
+  - pip:
+      - -e .

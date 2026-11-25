@@ -1,0 +1,6 @@
+# Keep large data out of the agent's context (saves credits)
+data/
+*.tif
+*.zarr/
+*.parquet
+.ipynb_checkpoints/

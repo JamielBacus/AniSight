@@ -1,0 +1,55 @@
+crops: [palay, corn]
+
+dates:
+  modis_start: "2001-01-01"
+  sentinel2_start: "2017-04-01"
+  # Rainfall from 1981-01: 1981-2000 is the fixed rainfall climatology (phase 2 design).
+  rainfall_start: "1981-01-01"
+  end: "2026-09-30"
+
+sources:
+  stac_url: "https://planetarycomputer.microsoft.com/api/stac/v1"
+  modis_collection: "modis-13Q1-061"
+  sentinel2_collection: "sentinel-2-l2a"
+  worldcover_collection: "esa-worldcover"
+  boundaries_url: "https://www.geoboundaries.org/api/current/gbOpen/PHL/ADM2/"
+  boundaries_adm3_url: "https://www.geoboundaries.org/api/current/gbOpen/PHL/ADM3/"
+  # Open-Meteo Historical Weather API (ERA5 reanalysis, no API key; free tier is
+  # non-commercial only, CC BY 4.0 attribution required). See `rainfall:` below.
+  open_meteo_url: "https://archive-api.open-meteo.com/v1/archive"
+
+cropland_class: 40
+s2_cloud_scl_classes: [3, 8, 9, 10]
+min_valid_fraction: 0.10
+random_seed: 42
+
+# Daily rainfall at one point per province (cropland centroid), cropyield.rainfall.
+rainfall:
+  # era5: 0.25 deg, 1940-present, consistent series (default). Alternative: era5_land
+  # (0.1 deg, 1950-present). Avoid best_match: it switches sources over time.
+  model: era5
+  timezone: Asia/Manila      # daily sums follow local calendar days (UTC+8)
+  variable: precipitation_sum
+  data_lag_days: 5           # ERA5 updates daily with ~5 days delay
+  # Free-tier limits in weighted API calls (https://open-meteo.com/en/terms). A request
+  # costs max(1, days/14) x max(1, variables/10); one calendar year is ~26 calls.
+  per_minute: 600
+  per_hour: 5000
+  per_day: 10000
+  budget_fraction: 0.8       # stay below 80% of each limit
+  max_attempts: 5            # tries per yearly chunk, then it is recorded as failed
+  backoff_s: 10              # retry delay without Retry-After; doubles per attempt
+  max_wait_s: 3600           # a longer Retry-After stops the run cleanly (resume later)
+  timeout_s: 60
+
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  reports: reports
+modeling:
+  # Rolling-origin evaluation (phase 2). Era rows start at start_year (first year with
+  # complete feature windows); each year >= first_test_year is one test fold.
+  eras:
+    modis: {start_year: 2002, first_test_year: 2012}
+    s2: {start_year: 2018, first_test_year: 2021}
