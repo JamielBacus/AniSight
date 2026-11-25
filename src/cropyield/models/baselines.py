@@ -1,4 +1,4 @@
-"""Non-satellite baselines B0, B1, B2 (phase 2, Requirement 2).
+"""Non-satellite baselines B0, B1, B2 (phase 2, Requirement 2) and the B3 blend (task 8).
 
 All models follow a small sklearn-style API: `fit(train_df)` learns only from the rows it
 is given (pass training-fold rows only), and `predict(df)` returns predicted `log_yield`
@@ -141,3 +141,25 @@ class SameQuarterLastYear:
         if miss.any():
             last[miss] = self.b1_.predict(df.loc[miss]).to_numpy()
         return pd.Series(last, index=df.index, name=PRED_NAME)
+
+
+class B0B2Blend:
+    """B3: row-wise mean of the B0 and B2 log-yield predictions.
+
+    Both components are fitted on the rows passed to `fit` (the training fold), so B3
+    is as fold-safe as B0 and B2. B3 was added in task 8 after the B0/B2 test-fold
+    results were known (post hoc), so its comparison with B2 is optimistic.
+    `fallback_mask(df)` is B0's: rows where last year's value is missing and B0 used B1.
+    """
+
+    def fit(self, train_df: pd.DataFrame) -> B0B2Blend:
+        self.b0_ = SameQuarterLastYear().fit(train_df)
+        self.b2_ = MeanPlusTrend().fit(train_df)
+        return self
+
+    def fallback_mask(self, df: pd.DataFrame) -> pd.Series:
+        return self.b0_.fallback_mask(df)
+
+    def predict(self, df: pd.DataFrame) -> pd.Series:
+        pred = 0.5 * (self.b0_.predict(df).to_numpy() + self.b2_.predict(df).to_numpy())
+        return pd.Series(pred, index=df.index, name=PRED_NAME)

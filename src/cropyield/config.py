@@ -120,6 +120,7 @@ class Paths:
     interim: Path
     processed: Path
     reports: Path
+    models: Path | None = None  # final models (cropyield select); None -> <repo>/models
 
 
 @dataclass(frozen=True)

@@ -37,11 +37,11 @@
   - [x] 6.2 Add rainfall columns to `features.py` (window total, halves, anomaly) with tests
     - _Requirements: 5.2, 5.3_
 
-- [-] 7. Evaluate rainfall feature sets (subagent: modeler)
+- [x] 7. Evaluate rainfall feature sets (subagent: modeler)
   - After the user has run `cropyield rainfall` and `cropyield features`, evaluate `rain`, `modis_rain`, `s2_rain`
   - _Requirements: 4.4, 5.2_
 
-- [ ] 8. Model selection, final models and predictions (subagent: modeler)
+- [x] 8. Model selection, final models and predictions (subagent: modeler)
   - Implement `select.py` and `report.py`; add `cropyield select`
   - Write `models/<crop>.joblib`, `data/processed/predictions.parquet` (out-of-fold history + 80% intervals) and `reports/phase2_results.md` with figures
   - _Requirements: 6.1, 6.2, 6.3, 6.4_

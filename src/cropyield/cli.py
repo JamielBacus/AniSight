@@ -146,5 +146,13 @@ def evaluate(
                    models=models.value if models else None, feature_sets=feature_sets))
 
 
+@app.command()
+def select(config_dir: Optional[str] = typer.Option(None, help=CONFIG_HELP)) -> None:
+    """Select a model per crop (MODIS era), write models/<crop>.joblib,
+    data/processed/predictions.parquet and reports/phase2_results.md."""
+    from cropyield.models import select as mod
+    mod.main(_argv(config_dir=config_dir))
+
+
 if __name__ == "__main__":
     app()

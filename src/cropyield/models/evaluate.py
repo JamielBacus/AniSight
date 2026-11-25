@@ -223,8 +223,10 @@ def log_experiment(cfg: Config, *, model: str, era: str, oof: pd.DataFrame,
     difference vs that reference (default "B2") for the crop, resampled by test year
     with `seed` (default `cfg.pipeline.random_seed`).
 
-    Never rewrites existing rows; raises ValueError if the existing file's header does
-    not match EXPERIMENT_COLUMNS.
+    Append-only: never rewrites existing rows; raises ValueError if the existing file's
+    header does not match EXPERIMENT_COLUMNS. (`cropyield evaluate` separately calls
+    `dedupe_experiments` for the baseline models B0/B1/B2 after a baseline run, so
+    re-running baselines replaces their earlier rows; other models stay append-only.)
     """
     path = experiments_path(cfg)
     seed = cfg.pipeline.random_seed if seed is None else seed
@@ -261,6 +263,37 @@ def log_experiment(cfg: Config, *, model: str, era: str, oof: pd.DataFrame,
             raise ValueError(f"{path} has columns {header}, expected {EXPERIMENT_COLUMNS}")
     out.to_csv(path, mode="a", header=not exists, index=False)
     return out
+
+
+EXPERIMENT_KEY = ["model", "era", "crop"]
+
+
+def dedupe_experiments(path: Path, models: Sequence[str] | None = None) -> int:
+    """Keep only the latest row (by timestamp) per (model, era, crop) in `path`.
+
+    The key keeps feature sets and eras apart: satellite rows are named
+    "<model>:<feature_set>" and a set run on two eras (e.g. rain@modis, rain@s2) differs
+    in `era`. If `models` is given, only rows of those models are deduplicated; all
+    other rows are left untouched. Ties on timestamp keep the row written last.
+    Surviving rows keep their original order. Returns the number of rows removed.
+    """
+    if not path.exists() or path.stat().st_size == 0:
+        return 0
+    log_df = pd.read_csv(path, dtype=str, keep_default_na=False)
+    if list(log_df.columns) != EXPERIMENT_COLUMNS:
+        raise ValueError(f"{path} has columns {list(log_df.columns)}, "
+                         f"expected {EXPERIMENT_COLUMNS}")
+    ts = pd.to_datetime(log_df["timestamp"], utc=True)
+    order = (log_df.assign(_ts=ts, _pos=np.arange(len(log_df)))
+             .sort_values(["_ts", "_pos"], kind="stable"))
+    latest = ~order.duplicated(EXPERIMENT_KEY, keep="last")
+    if models is not None:
+        latest |= ~order["model"].isin(list(models))
+    keep = order.loc[latest, "_pos"].sort_values().to_numpy()
+    removed = len(log_df) - len(keep)
+    if removed:
+        log_df.iloc[keep].to_csv(path, index=False)
+    return removed
 
 
 # --- baseline evaluation run (`cropyield evaluate`) ----------------------------------
@@ -311,15 +344,25 @@ def evaluate_baselines(cfg: Config, df: pd.DataFrame, era: str,
     oof = {name: cross_validate(f, df, era, eras=eras) for name, f in factories.items()}
     fallback = pd.concat([m.fallback_ for m in b0_models]).loc[oof["B0"].index].astype(bool)
 
+    b0_crop = oof["B0"]["crop"]
+    fallback_by_crop = {c: int(n) for c, n in fallback.groupby(b0_crop).sum().items()}
+
     logged, reports = [], []
     for name in ("B2", "B1", "B0"):
-        params = dict(BASELINE_PARAMS[name])
-        if name == "B0":
-            params["n_fallback"] = int(fallback.sum())
         ref = None if name == "B2" else oof["B2"]
-        logged.append(log_experiment(cfg, model=name, era=era, oof=oof[name],
-                                     params=params, features=[], reference_oof=ref,
-                                     timestamp=ts))
+        if name != "B0":
+            logged.append(log_experiment(cfg, model=name, era=era, oof=oof[name],
+                                         params=BASELINE_PARAMS[name], features=[],
+                                         reference_oof=ref, timestamp=ts))
+        else:
+            # params are per row, so log B0 one crop at a time: each crop's row gets
+            # that crop's fallback count (n_fallback), plus the per-crop breakdown.
+            for crop in sorted(fallback_by_crop):
+                params = {**BASELINE_PARAMS[name], "n_fallback": fallback_by_crop[crop],
+                          "n_fallback_by_crop": fallback_by_crop}
+                logged.append(log_experiment(
+                    cfg, model=name, era=era, oof=oof[name].loc[b0_crop == crop],
+                    params=params, features=[], reference_oof=ref, timestamp=ts))
         rep = metrics_report(oof[name])
         rep.insert(0, "era", era)
         rep.insert(0, "model", name)
@@ -552,6 +595,10 @@ def main(argv: list[str] | None = None) -> None:
         pd.concat([r.report for r in runs], ignore_index=True).to_csv(out, index=False)
         n_logged += sum(len(r.logged) for r in runs)
         written.append(out)
+        # baselines have fixed params, so a re-run replaces their earlier rows
+        n_replaced = dedupe_experiments(experiments_path(cfg), models=list(BASELINE_PARAMS))
+        if n_replaced:
+            print(f"replaced {n_replaced} earlier baseline rows in {experiments_path(cfg)}")
     if args.models in ("satellite", "all"):
         sat_runs = []
         for fs, era in pairs:

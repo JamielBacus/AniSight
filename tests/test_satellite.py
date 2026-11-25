@@ -53,7 +53,8 @@ def test_feature_sets_match_design():
     assert all(f.startswith("modis_") and not f.endswith("_n_obs")
                for f in FEATURE_SETS["modis"])
     assert FEATURE_SETS["modis_s2"] == FEATURE_SETS["modis"] + FEATURE_SETS["s2"]
-    assert FEATURE_SET_ERA == {"modis": "modis", "s2": "s2", "modis_s2": "s2"}
+    assert FEATURE_SET_ERA == {"modis": "modis", "s2": "s2", "modis_s2": "s2",
+                               "rain": "modis", "modis_rain": "modis", "s2_rain": "s2"}
 
 
 def test_climatology_is_training_group_mean_with_fallback():

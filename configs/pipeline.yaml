@@ -47,6 +47,7 @@ paths:
   interim: data/interim
   processed: data/processed
   reports: reports
+  models: models      # final fitted models, models/<crop>.joblib (cropyield select)
 modeling:
   # Rolling-origin evaluation (phase 2). Era rows start at start_year (first year with
   # complete feature windows); each year >= first_test_year is one test fold.

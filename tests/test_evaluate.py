@@ -1,4 +1,5 @@
 import dataclasses
+import json
 from datetime import datetime, timezone
 
 import numpy as np
@@ -8,8 +9,9 @@ import pytest
 from cropyield.config import Era, load_config
 from cropyield.models.baselines import MeanPlusTrend, UnitQuarterMean
 from cropyield.models.evaluate import (EXPERIMENT_COLUMNS, OOF_COLUMNS, bootstrap_mae_diff,
-                                       cross_validate, experiments_path, log_experiment,
-                                       metrics, metrics_report)
+                                       cross_validate, dedupe_experiments,
+                                       experiments_path, log_experiment, metrics,
+                                       metrics_report)
 
 UNITS = ["Davao City", "Davao del Sur+Davao Occidental"]
 ERAS = {"modis": Era(start_year=2002, first_test_year=2008)}
@@ -196,6 +198,62 @@ def test_log_experiment_rejects_mismatched_header(tmp_path):
     assert path.read_text() == "a,b\n1,2\n"
 
 
+def _log_rows(rows):
+    """Synthetic experiments.csv rows: (timestamp, model, era, crop, mae)."""
+    out = pd.DataFrame("", index=range(len(rows)), columns=EXPERIMENT_COLUMNS)
+    for i, (ts, model, era, crop, mae) in enumerate(rows):
+        out.loc[i, ["timestamp", "model", "era", "crop", "mae"]] = [ts, model, era, crop, mae]
+    return out
+
+
+def test_dedupe_experiments_keeps_latest_per_model_era_crop(tmp_path):
+    t1, t2 = "2025-01-01T00:00:00+00:00", "2025-02-01T00:00:00+00:00"
+    path = tmp_path / "experiments.csv"
+    _log_rows([
+        (t2, "B0", "modis", "corn", "0.2"),            # newer, written first
+        (t1, "B0", "modis", "corn", "0.1"),
+        (t1, "B0", "modis", "palay", "0.3"),
+        (t1, "AnomalyRidge:rain", "modis", "corn", "0.4"),
+        (t1, "AnomalyRidge:rain", "s2", "corn", "0.5"),          # other era: kept
+        (t1, "AnomalyRidge:modis_rain", "modis", "corn", "0.6"),  # other set: kept
+        (t1, "AnomalyRidge:rain", "modis", "corn", "0.7"),       # tie: last written wins
+    ]).to_csv(path, index=False)
+    assert dedupe_experiments(path) == 2
+    log = pd.read_csv(path, dtype=str)
+    assert list(log.columns) == EXPERIMENT_COLUMNS
+    assert list(log["mae"]) == ["0.2", "0.3", "0.5", "0.6", "0.7"]
+    assert not log.duplicated(["model", "era", "crop"]).any()
+    assert dedupe_experiments(path) == 0  # idempotent
+
+
+def test_dedupe_experiments_limited_to_models(tmp_path):
+    t1, t2 = "2025-01-01T00:00:00+00:00", "2025-02-01T00:00:00+00:00"
+    path = tmp_path / "experiments.csv"
+    _log_rows([
+        (t1, "B2", "s2", "corn", "0.1"),
+        (t1, "BoostedModel:s2", "s2", "corn", "0.2"),
+        (t2, "BoostedModel:s2", "s2", "corn", "0.3"),
+        (t2, "B2", "s2", "corn", "0.4"),
+    ]).to_csv(path, index=False)
+    assert dedupe_experiments(path, models=["B0", "B1", "B2"]) == 1
+    assert list(pd.read_csv(path, dtype=str)["mae"]) == ["0.2", "0.3", "0.4"]
+
+
+def test_evaluate_cli_rerun_replaces_baseline_rows(tmp_path):
+    from cropyield.cli import app as cli_app
+    from typer.testing import CliRunner
+
+    cfg_dir = _tmp_config_dir(tmp_path)
+    processed = tmp_path / "data" / "processed"
+    processed.mkdir(parents=True)
+    _features().to_parquet(processed / "features.parquet")
+    for _ in range(2):
+        res = CliRunner().invoke(cli_app, ["evaluate", "--config-dir", str(cfg_dir)])
+        assert res.exit_code == 0, res.output
+    log = pd.read_csv(tmp_path / "reports" / "experiments.csv")
+    assert len(log) == 12 and not log.duplicated(["model", "era", "crop"]).any()
+
+
 # --- evaluate_baselines / `cropyield evaluate` ------------------------------------------
 
 def _tmp_config_dir(tmp_path):
@@ -244,8 +302,13 @@ def test_evaluate_cli_end_to_end(tmp_path, capsys):
     assert log.loc[b2, "mae_diff"].isna().all()
     assert (log.loc[~b2, "ref_model"] == "B2").all()
     assert log.loc[~b2, "mae_diff_ci_low"].notna().all()
-    b0 = log.loc[(log["model"] == "B0") & (log["era"] == "modis")]
-    assert all('"n_fallback": 1' in p for p in b0["params"])
+    # the fixture's only B0 gap is palay: each crop's row carries its own count
+    b0 = log.loc[(log["model"] == "B0") & (log["era"] == "modis")].set_index("crop")
+    by_crop = {"corn": 0, "palay": 1}
+    for crop, n in by_crop.items():
+        p = json.loads(b0.loc[crop, "params"])
+        assert p["n_fallback"] == n and p["n_fallback_by_crop"] == by_crop
+    assert b0["mae_diff_ci_low"].notna().all()
     # outlier rows exist in the test set, so the no-outlier subset is smaller
     assert (log["n_test_no_outliers"] < log["n_test"]).all()
 
@@ -379,7 +442,7 @@ def test_evaluate_cli_feature_sets_subset(tmp_path):
     log = pd.read_csv(tmp_path / "reports" / "experiments.csv")
     second = log.loc[log["timestamp"] == log["timestamp"].iloc[-1]]
     # second run: only rainfall sets, 2 models x 3 (set, era) pairs x 2 crops, no baselines
-    assert len(second) == 12 and not second["model"].str.startswith("B").any()
+    assert len(second) == 12 and not second["model"].isin(["B0", "B1", "B2"]).any()
     pairs = set(zip(second["model"].str.split(":").str[1], second["era"]))
     assert pairs == {("rain", "modis"), ("s2_rain", "s2"), ("rain", "s2")}
     assert (second["ref_model"] == "B2").all()
