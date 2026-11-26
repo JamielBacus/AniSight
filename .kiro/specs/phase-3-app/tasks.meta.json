@@ -1,0 +1,91 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Phase 2 carry-over fixes (subagent: modeler)": [
+      {
+        "executionId": "1792a809-b1af-498f-82d7-863d967ebf6d",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795686192716
+      },
+      {
+        "executionId": "1792a809-b1af-498f-82d7-863d967ebf6d",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795687883809
+      }
+    ],
+    "2.1 Implement `models/forecast.py` (`make_forecast`, `log_forecast`) and `cropyield forecast --quarter [--backfill]`": [
+      {
+        "executionId": "1792a809-b1af-498f-82d7-863d967ebf6d",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795687889787
+      },
+      {
+        "executionId": "1792a809-b1af-498f-82d7-863d967ebf6d",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795689823372
+      }
+    ],
+    "2.2 Implement `score_forecasts` with first-seen vs latest actuals and `cropyield score`": [
+      {
+        "executionId": "1792a809-b1af-498f-82d7-863d967ebf6d",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795689823781
+      },
+      {
+        "executionId": "1792a809-b1af-498f-82d7-863d967ebf6d",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795690790648
+      }
+    ],
+    "2.3 Run `cropyield forecast --quarter 2026Q4` for real and show me the forecast table": [
+      {
+        "executionId": "1792a809-b1af-498f-82d7-863d967ebf6d",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795690791087
+      },
+      {
+        "executionId": "1792a809-b1af-498f-82d7-863d967ebf6d",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795691448815
+      }
+    ],
+    "2. Forecast logging and live scoring (subagent: modeler)": [
+      {
+        "executionId": "1792a809-b1af-498f-82d7-863d967ebf6d",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795691448846
+      }
+    ],
+    "3. App data export (subagent: modeler)": [
+      {
+        "executionId": "ad53bad8-2413-4b0b-bc71-37106b10ba3c",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795691503964
+      },
+      {
+        "executionId": "ad53bad8-2413-4b0b-bc71-37106b10ba3c",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795692886806
+      }
+    ],
+    "4. App skeleton and map (subagent: web-dev)": [
+      {
+        "executionId": "f240db32-929a-4039-bf82-b21d47dcb880",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795692982272
+      },
+      {
+        "executionId": "f240db32-929a-4039-bf82-b21d47dcb880",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795697005986
+      }
+    ],
+    "5. Province detail panel (subagent: web-dev)": [
+      {
+        "executionId": "f240db32-929a-4039-bf82-b21d47dcb880",
+        "chatSessionId": "sess_0a4d96de-978b-430b-9ec9-f56487eee8a5",
+        "timestamp": 1795697011340
+      }
+    ]
+  }
+}

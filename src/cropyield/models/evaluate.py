@@ -33,7 +33,8 @@ from cropyield.models.satellite import (FEATURE_SET_ERA, FEATURE_SETS, AnomalyRi
 log = logging.getLogger(__name__)
 
 # Target columns removed from the test fold before `predict`, so no model can read them.
-TARGET_COLS = ["log_yield", "yield_t_ha", "production_mt"]
+# area_ha is published with production, so it is not known at forecast time either.
+TARGET_COLS = ["log_yield", "yield_t_ha", "production_mt", "area_ha"]
 
 OOF_COLUMNS = [*UNIT_KEYS, "is_outlier", "log_yield", "pred_log_yield", "yield_t_ha",
                "pred_yield_t_ha", "n_train_years", "train_first_year"]
@@ -460,11 +461,11 @@ def evaluate_satellite(cfg: Config, df: pd.DataFrame, feature_set: str,
                             "n_train": [m.n_train_ for m in ridges],
                             "n_train_dropped": [m.n_train_dropped_ for m in ridges]})
     ridge_crop = oof["AnomalyRidge"]["crop"]
+    ridge_fb_by_crop = {c: int(n) for c, n in fallback.groupby(ridge_crop).sum().items()}
     params = {
         "AnomalyRidge": {"class": "AnomalyRidge", "alpha": RIDGE_ALPHA,
-                         "feature_set": feature_set, "n_fallback": int(fallback.sum()),
-                         "n_fallback_by_crop": {c: int(n) for c, n in
-                                                fallback.groupby(ridge_crop).sum().items()},
+                         "feature_set": feature_set,
+                         "n_fallback_by_crop": ridge_fb_by_crop,
                          "n_train_dropped_by_fold": dict(zip(
                              map(str, dropped["test_year"]),
                              map(int, dropped["n_train_dropped"])))},
@@ -476,9 +477,17 @@ def evaluate_satellite(cfg: Config, df: pd.DataFrame, feature_set: str,
     logged, reports = [], []
     for name in SATELLITE_MODELS:
         label = f"{name}:{feature_set}"
-        logged.append(log_experiment(cfg, model=label, era=era, oof=oof[name],
-                                     params=params[name], features=feats,
-                                     reference_oof=b2_oof, timestamp=ts))
+        if name != "AnomalyRidge":
+            logged.append(log_experiment(cfg, model=label, era=era, oof=oof[name],
+                                         params=params[name], features=feats,
+                                         reference_oof=b2_oof, timestamp=ts))
+        else:
+            # like B0: each crop's row gets that crop's fallback count (n_fallback)
+            for crop in sorted(ridge_fb_by_crop):
+                p = {**params[name], "n_fallback": ridge_fb_by_crop[crop]}
+                logged.append(log_experiment(
+                    cfg, model=label, era=era, oof=oof[name].loc[ridge_crop == crop],
+                    params=p, features=feats, reference_oof=b2_oof, timestamp=ts))
         rep = metrics_report(oof[name])
         rep.insert(0, "era", era)
         rep.insert(0, "model", label)

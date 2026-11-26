@@ -400,13 +400,16 @@ def write_report(cfg: Config, df: pd.DataFrame, res: SelectionResult,
           f"{int(df['year'].max())}) of both crops, as in cross-validation.")
     if any(res.selected[c][0] in ("B0", "B3") for c in crops):
         w("- A model that uses B0 needs last year's same-quarter PSA yield at forecast "
-          "time: refit with the latest PSA year before forecasting. Where that value is "
-          "missing (reporting-unit regroupings), B0 falls back to B1, the unit-quarter "
-          "mean.")
+          "time. Where that value is missing (reporting-unit regroupings), B0 falls back "
+          "to B1, the unit-quarter mean.")
     w("- The saved bundle holds the fitted model, its feature list, training period, "
       "the 80% interval offsets from all out-of-fold residuals of that crop, and "
-      "`area_model` (last year's PSA area, B0-style fallback). "
-      "`select.forecast_production` combines them for future quarters.")
+      "recipes for the selected model, B0, B2 and the area rule. "
+      "`select.forecast_production` refits these recipes for each target year Y on the "
+      "PSA rows of earlier years only, then multiplies predicted yield by the predicted "
+      "area: last year's PSA area of the same unit/crop/quarter, else the unit's own "
+      "mean area for that crop and quarter; no area forecast (NaN production, yield "
+      "kept) when the unit has no own area history for that crop and quarter.")
     w("")
 
     w("## Predicted production")

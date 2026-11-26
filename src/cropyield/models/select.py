@@ -13,14 +13,16 @@ Selection rule (the user's version, which overrides Requirement 6.1's "simplest 
 
 Final models: the selected model is fitted on all MODIS-era rows of both crops (every
 model is pooled over crops, exactly as in cross-validation) and saved with its feature
-list, training period and forecast interval to `<paths.models>/<crop>.joblib`.
+list, training period, forecast interval and recipes (selected model, B0, B2, area
+rule) to `<paths.models>/<crop>.joblib`.
 
 Predictions (`<paths.processed>/predictions.parquet`): out-of-fold history of the
 selected model per crop with an 80% interval and "conditions vs normal" columns; see
 PREDICTION_COLUMNS for every column's definition. Predicted production uses a
-forecastable area (`SameQuarterLastYearArea`: last year's PSA area, B0-style fallback),
-not the PSA area of the predicted quarter, which is released together with production.
-`forecast_production` applies the same rule to future quarters.
+forecastable area (`SameQuarterLastYearArea`: last year's PSA area of the same
+unit/crop/quarter, else the unit's own mean area; NaN when the unit has no own area
+history), not the PSA area of the predicted quarter, which is released together with
+production. `forecast_production` refits the recipes and this rule per target year.
 """
 
 from __future__ import annotations
@@ -43,7 +45,7 @@ from cropyield.models.baselines import (GROUP, B0B2Blend, MeanPlusTrend,
                                         UnitQuarterMean)
 from cropyield.models.data import (UNIT_KEYS, era_rows, fold_summary, load_modeling_table,
                                    rolling_folds)
-from cropyield.models.evaluate import (RIDGE_ALPHA, Model, bootstrap_mae_diff,
+from cropyield.models.evaluate import (RIDGE_ALPHA, TARGET_COLS, Model, bootstrap_mae_diff,
                                        cross_validate, dedupe_experiments,
                                        experiments_path, log_experiment, metrics)
 from cropyield.models.satellite import FEATURE_SETS, AnomalyRidge, BoostedModel
@@ -381,11 +383,52 @@ def interval_coverage(pred: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# --- final models: recipes and forecasts -------------------------------------------
+
+# Bumped whenever the meaning of a recipe changes; forecasts log it with each row.
+RECIPE_VERSION = "phase3-v1"
+# Area rule recipe: refit per target year by `forecast_production` (no fitted copy saved).
+AREA_RECIPE: dict[str, Any] = {
+    "class": "SameQuarterLastYearArea", "mask_no_history": True,
+    "rule": "last year's PSA area of the same unit/crop/quarter, else the unit's mean "
+            "area for that crop and quarter over earlier years; no area forecast (NaN) "
+            "when the unit has no own area history for that crop and quarter"}
+
+
+def model_recipe(label: str) -> dict[str, Any]:
+    """Recipe of a model label: what frozen code needs to refit it on new history."""
+    params: dict[str, Any] = {}
+    if label.startswith("AnomalyRidge:"):
+        params["alpha"] = RIDGE_ALPHA
+    return {"label": label, "class": type(model_factory(label)()).__name__,
+            "features": model_features(label), "params": params,
+            "recipe_version": RECIPE_VERSION}
+
+
+def model_from_recipe(recipe: Mapping[str, Any]) -> Model:
+    """Fresh (unfitted) model for a recipe; raises if the code no longer matches it."""
+    if recipe.get("recipe_version") != RECIPE_VERSION:
+        raise ValueError(f"recipe version {recipe.get('recipe_version')!r} does not match "
+                         f"this code ({RECIPE_VERSION!r}); rerun `cropyield select`")
+    model = model_factory(recipe["label"])()
+    if type(model).__name__ != recipe["class"]:
+        raise ValueError(f"recipe {recipe['label']!r} expects class {recipe['class']}, "
+                         f"code builds {type(model).__name__}")
+    return model
+
+
 def fit_final(label: str, crop: str, era_df: pd.DataFrame, oof: pd.DataFrame,
               era: str, timestamp: datetime) -> dict[str, Any]:
-    """Fit `label` on all `era_df` rows (both crops) and bundle it for `<crop>.joblib`."""
+    """Fit `label` on all `era_df` rows (both crops) and bundle it for `<crop>.joblib`.
+
+    The bundle holds the fitted model plus recipes for it (`recipes["model"]`), B0 and B2
+    (`recipes["b0"]`, `recipes["b2"]`) and the area rule (`area_recipe`), so live scoring
+    can refit all three on the PSA data released before a forecast date. B0 and B2 are
+    also saved fitted on the same rows (`b0_model`, `b2_model`).
+    """
     model = model_factory(label)()
     model.fit(era_df)
+    b0, b2 = SameQuarterLastYear().fit(era_df), MeanPlusTrend().fit(era_df)
     o = oof.loc[oof["crop"] == crop]
     resid = (o["log_yield"] - o["pred_log_yield"]).to_numpy(float)
     lo, hi = np.quantile(resid, INTERVAL_QUANTILES)
@@ -395,18 +438,21 @@ def fit_final(label: str, crop: str, era_df: pd.DataFrame, oof: pd.DataFrame,
              "cross-validation).")
     if uses_b0:
         notes += (" Uses B0: forecasting year Y needs the same unit/crop/quarter yield of "
-                  "Y-1 in the data passed to fit(); refit with the latest PSA year before "
-                  "forecasting. Where last year's value is missing (reporting-unit "
-                  "regroupings, e.g. a unit's first year after it is split off), B0 "
-                  "falls back to B1 (unit-quarter mean).")
-    notes += (" Production forecast = exp(prediction) x area_model.predict(rows): last "
-              "year's PSA area of the same unit/crop/quarter (B0-style fallback), because "
-              "year Y's area is published with year Y's production. Refit (or use "
-              "forecast_production with the latest PSA history) before forecasting.")
-    area_model = SameQuarterLastYearArea().fit(era_df)
+                  "Y-1 in the training rows. Where last year's value is missing "
+                  "(reporting-unit regroupings, e.g. a unit's first year after it is split "
+                  "off), B0 falls back to B1 (unit-quarter mean).")
+    notes += (" forecast_production(bundle, history, target) refits the recipes and the "
+              "area rule for each target year Y on history rows with year < Y (from the "
+              "training start year); the saved fitted models are for inspection. "
+              "Production = yield x area, where area = " + AREA_RECIPE["rule"] + ", "
+              "because year Y's area is published with year Y's production.")
     return {
         "crop": crop, "model_name": label, "model": model,
-        "area_model": area_model,
+        "b0_model": b0, "b2_model": b2,
+        "recipes": {"model": model_recipe(label), "b0": model_recipe("B0"),
+                    "b2": model_recipe("B2")},
+        "area_recipe": dict(AREA_RECIPE),
+        "recipe_version": RECIPE_VERSION,
         "features": model_features(label), "era": era,
         "training_period": (int(era_df["year"].min()), int(era_df["year"].max())),
         "n_train_rows": int(len(era_df)),
@@ -425,30 +471,49 @@ def forecast_production(bundle: Mapping[str, Any], history: pd.DataFrame,
                         target: pd.DataFrame) -> pd.DataFrame:
     """Forecast yield, area and production for `target` rows from a `<crop>.joblib` bundle.
 
-    `history` is the latest PSA modeling table; only its rows with year < the target
-    rows' year (per row: min target year) are used for the area rule, so the target
-    quarter's own PSA area is never read. The yield model is used as saved (refit it on
-    the latest history first if it uses B0). Returns (index = target.index)
-    pred_yield_t_ha, predicted_area_ha, area_fallback, area_fallback_level,
-    pred_production_mt, and pred_lo/hi_t_ha and pred_production_lo/hi_mt from the
-    bundle's interval offsets. Where the unit has no own area history for the crop and
-    quarter (area_fallback_level crop_quarter_mean or coarser), predicted_area_ha and
-    the production columns are NaN ("no area forecast"); yield is still predicted.
+    `history` is the latest PSA modeling table. For each target year Y separately, the
+    bundle's recipes (selected model, B0, B2) and the area rule are refitted on the
+    history rows with training_period[0] <= year < Y, so a target in Y+1 sees year Y's
+    data and no target ever reads its own year's PSA yield or area. Target columns
+    (TARGET_COLS) are dropped from the rows the models predict.
+
+    Returns (index = target.index) pred_yield_t_ha, pred_lo/hi_t_ha (bundle interval
+    offsets), b0_pred_yield_t_ha, b2_pred_yield_t_ha, predicted_area_ha, area_fallback,
+    area_fallback_level, pred_production_mt, pred_production_lo/hi_mt and
+    history_last_year (latest history year used). Where the unit has no own area
+    history for the crop and quarter (area_fallback_level crop_quarter_mean or
+    coarser), predicted_area_ha and the production columns are NaN ("no area
+    forecast"); yield is still predicted.
     """
-    y0 = int(target["year"].min())
-    area_model = SameQuarterLastYearArea().fit(history.loc[history["year"] < y0])
-    log_pred = np.asarray(bundle["model"].predict(target), dtype=float)
+    start = int(bundle["training_period"][0])
+    recipes = bundle["recipes"]
     iv = bundle["interval"]
-    out = pd.DataFrame(index=target.index)
-    out["pred_yield_t_ha"] = np.exp(log_pred)
-    out["pred_lo_t_ha"] = np.exp(log_pred + iv["log_resid_lo"])
-    out["pred_hi_t_ha"] = np.exp(log_pred + iv["log_resid_hi"])
-    out["predicted_area_ha"] = area_model.predict(target)
-    out["area_fallback"] = area_model.fallback_mask(target).astype(bool)
-    out["area_fallback_level"] = area_model.fallback_level(target)
-    # no own area history (e.g. a newly split unit): no area forecast, yield is kept
-    out["predicted_area_ha"] = out["predicted_area_ha"].where(
-        area_model.has_own_history(target))
+    parts = []
+    for y, t in target.groupby("year", sort=True):
+        hist = history.loc[(history["year"] >= start) & (history["year"] < y)]
+        if hist.empty:
+            raise ValueError(f"no history rows in {start}-{int(y) - 1} for target year {y}")
+        x = t.drop(columns=[c for c in TARGET_COLS if c in t])
+        logp = {}
+        for key in ("model", "b0", "b2"):
+            m = model_from_recipe(recipes[key]).fit(hist)
+            logp[key] = np.asarray(m.predict(x), dtype=float)
+        area_model = SameQuarterLastYearArea().fit(hist)
+        out = pd.DataFrame(index=t.index)
+        out["pred_yield_t_ha"] = np.exp(logp["model"])
+        out["pred_lo_t_ha"] = np.exp(logp["model"] + iv["log_resid_lo"])
+        out["pred_hi_t_ha"] = np.exp(logp["model"] + iv["log_resid_hi"])
+        out["b0_pred_yield_t_ha"] = np.exp(logp["b0"])
+        out["b2_pred_yield_t_ha"] = np.exp(logp["b2"])
+        out["predicted_area_ha"] = area_model.predict(x)
+        out["area_fallback"] = area_model.fallback_mask(x).astype(bool)
+        out["area_fallback_level"] = area_model.fallback_level(x)
+        # no own area history (e.g. a newly split unit): no area forecast, yield is kept
+        out["predicted_area_ha"] = out["predicted_area_ha"].where(
+            area_model.has_own_history(x))
+        out["history_last_year"] = int(hist["year"].max())
+        parts.append(out)
+    out = pd.concat(parts).loc[target.index]
     for a, b in (("pred_production_mt", "pred_yield_t_ha"),
                  ("pred_production_lo_mt", "pred_lo_t_ha"),
                  ("pred_production_hi_mt", "pred_hi_t_ha")):

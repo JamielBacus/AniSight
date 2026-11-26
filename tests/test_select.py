@@ -8,14 +8,16 @@ import pytest
 from cropyield.config import Era, load_config
 from cropyield.models.baselines import (B0B2Blend, MeanPlusTrend, SameQuarterLastYear,
                                         SameQuarterLastYearArea)
-from cropyield.models.data import prepare_modeling_table
+from cropyield.models.data import era_rows, prepare_modeling_table
 from cropyield.models.evaluate import EXPERIMENT_COLUMNS, cross_validate, log_experiment
 from cropyield.models.report import production_errors, req61_selection, write_report
-from cropyield.models.select import (CANDIDATE_COLUMNS, PREDICTION_COLUMNS,
+from cropyield.models.select import (ANOMALY_SOURCE_FEATURES, CANDIDATE_COLUMNS,
+                                     PREDICTION_COLUMNS,
                                      best_satellite_model, earlier_fold_intervals,
                                      expanding_anomalies, forecast_production,
-                                     model_factory, predicted_area_oof, run_selection,
-                                     select_candidate)
+                                     model_factory, model_from_recipe, model_recipe,
+                                     predicted_area_oof, run_selection, select_candidate,
+                                     build_predictions, b0_fallback_oof)
 from cropyield.models.satellite import FEATURE_SETS
 
 UNITS = ["Davao City", "Davao Oriental"]
@@ -244,10 +246,17 @@ def test_predicted_area_oof_is_nan_without_own_history():
                                "predicted_area_ha"]).all()
 
 
+def _bundle(label="B0", start=2002):
+    """Minimal `<crop>.joblib`-like bundle for forecast_production."""
+    return {"training_period": (start, 2011),
+            "recipes": {"model": model_recipe(label), "b0": model_recipe("B0"),
+                        "b2": model_recipe("B2")},
+            "interval": {"log_resid_lo": -0.1, "log_resid_hi": 0.1}}
+
+
 def test_forecast_production_nan_for_unit_without_history():
     df = prepare_modeling_table(_features())
-    model = SameQuarterLastYear().fit(df.loc[df["year"] <= 2011])
-    bundle = {"model": model, "interval": {"log_resid_lo": -0.1, "log_resid_hi": 0.1}}
+    bundle = _bundle()
     target = df.loc[df["year"] == 2012]
     unit = target["reporting_unit"].iloc[0]
     # history: this unit has no rows at all (new unit); another unit misses only Y-1
@@ -273,12 +282,17 @@ def test_forecast_production_nan_for_unit_without_history():
 def test_forecast_production_is_yield_times_last_year_area():
     df = prepare_modeling_table(_features())
     train = df.loc[df["year"] <= 2011]
-    model = SameQuarterLastYear().fit(train)
-    bundle = {"model": model, "interval": {"log_resid_lo": -0.1, "log_resid_hi": 0.1}}
+    bundle = _bundle()
     target = df.loc[df["year"] == 2012]
     perturbed = df.copy()
     perturbed.loc[perturbed["year"] == 2012, "area_ha"] *= 3  # target-year area ignored
+    perturbed.loc[perturbed["year"] == 2012, "log_yield"] += 1  # and its yield
     out = forecast_production(bundle, perturbed, target)
+    np.testing.assert_allclose(np.log(out["pred_yield_t_ha"]),
+                               SameQuarterLastYear().fit(train).predict(target))
+    np.testing.assert_allclose(np.log(out["b2_pred_yield_t_ha"]),
+                               MeanPlusTrend().fit(train).predict(target))
+    assert (out["history_last_year"] == 2011).all()
     last = df.loc[df["year"] == 2011].set_index(["reporting_unit", "crop", "quarter"])
     expect = last.loc[pd.MultiIndex.from_frame(target[["reporting_unit", "crop",
                                                        "quarter"]]), "area_ha"]
@@ -288,6 +302,103 @@ def test_forecast_production_is_yield_times_last_year_area():
     np.testing.assert_allclose(out["pred_production_lo_mt"],
                                out["pred_lo_t_ha"] * out["predicted_area_ha"])
     assert (out["pred_production_lo_mt"] < out["pred_production_hi_mt"]).all()
+
+
+def test_forecast_production_refits_per_target_year():
+    # targets in two years (like 2026 Q4 + 2027 Q1): the later row must see the
+    # earlier year's data, the earlier row must not
+    df = prepare_modeling_table(_features())
+    target = df.loc[((df["year"] == 2011) & (df["quarter"] == 4))
+                    | ((df["year"] == 2012) & (df["quarter"] == 1))]
+    out = forecast_production(_bundle("B3"), df, target)
+    t11, t12 = target["year"] == 2011, target["year"] == 2012
+    assert (out.loc[t11, "history_last_year"] == 2010).all()
+    assert (out.loc[t12, "history_last_year"] == 2011).all()
+    assert (out["area_fallback_level"] == "last_year").all()
+    key = ["reporting_unit", "crop", "quarter"]
+    for yr, mask in ((2011, t11), (2012, t12)):
+        prev = df.loc[df["year"] == yr - 1].set_index(key)
+        idx = pd.MultiIndex.from_frame(target.loc[mask, key])
+        np.testing.assert_allclose(out.loc[mask, "predicted_area_ha"],
+                                   prev.loc[idx, "area_ha"].to_numpy())
+        np.testing.assert_allclose(np.log(out.loc[mask, "b0_pred_yield_t_ha"]),
+                                   prev.loc[idx, "log_yield"].to_numpy())
+        train = df.loc[df["year"] < yr]
+        np.testing.assert_allclose(np.log(out.loc[mask, "pred_yield_t_ha"]),
+                                   B0B2Blend().fit(train).predict(target.loc[mask]))
+    # same answer for each row as forecasting its year alone
+    alone = forecast_production(_bundle("B3"), df, target.loc[t12])
+    pd.testing.assert_frame_equal(out.loc[t12], alone)
+
+
+def test_forecast_production_uses_training_start_year():
+    df = prepare_modeling_table(_features())
+    target = df.loc[df["year"] == 2012]
+    late = forecast_production(_bundle("B2", start=2006), df, target)
+    np.testing.assert_allclose(
+        np.log(late["pred_yield_t_ha"]),
+        MeanPlusTrend().fit(df.loc[(df["year"] >= 2006) & (df["year"] < 2012)])
+        .predict(target))
+
+
+def test_model_recipe_round_trip_and_version_check():
+    for label in ("B0", "B2", "B3", "AnomalyRidge:rain"):
+        r = model_recipe(label)
+        assert type(model_from_recipe(r)).__name__ == r["class"]
+    assert model_recipe("AnomalyRidge:rain")["features"] == list(FEATURE_SETS["rain"])
+    with pytest.raises(ValueError):
+        model_from_recipe({**model_recipe("B3"), "recipe_version": "old"})
+    with pytest.raises(ValueError):
+        model_from_recipe({**model_recipe("B3"), "class": "SameQuarterLastYear"})
+
+
+def test_cross_validate_hides_area_from_predict():
+    seen = []
+
+    class Spy(SameQuarterLastYear):
+        def predict(self, df):
+            seen.append(set(df.columns))
+            return super().predict(df)
+
+    d = prepare_modeling_table(_features())
+    cross_validate(Spy, d, "modis", eras=ERAS)
+    assert seen and not any(c & {"area_ha", "production_mt", "log_yield", "yield_t_ha"}
+                            for c in seen)
+
+
+PREDICTED_COLUMNS = ["pred_yield_t_ha", "pred_lo_t_ha", "pred_hi_t_ha",
+                     "interval_n_years", "b2_pred_yield_t_ha", "b0_pred_yield_t_ha",
+                     "b0_fallback", "predicted_area_ha", "area_fallback",
+                     "area_fallback_level", "pred_production_mt", "n_train_years",
+                     *(f"{f}_anom" for f in ANOMALY_SOURCE_FEATURES), "rain_anom"]
+
+
+def _predictions(raw: pd.DataFrame) -> pd.DataFrame:
+    df = prepare_modeling_table(raw)
+    d = era_rows(df, "modis", ERAS)
+    oofs = {lab: cross_validate(model_factory(lab), df, "modis", eras=ERAS)
+            for lab in ("B0", "B2", "B3")}
+    return build_predictions(df, {"corn": "B3", "palay": "B2"}, oofs,
+                             b0_fallback_oof(d, 2008), d, predicted_area_oof(d, 2008))
+
+
+def test_build_predictions_has_no_target_year_leakage():
+    raw = _features()
+    # one unit has no 2009 rows (a regrouping) so fallbacks are exercised too
+    raw = raw.loc[~((raw["reporting_unit"] == UNITS[0]) & (raw["year"] == 2009))]
+    base = _predictions(raw)
+    for y in (2009, 2010, 2012):
+        pert = raw.copy()
+        sel = pert["year"] == y
+        pert.loc[sel, "yield_t_ha"] *= 2.0
+        pert.loc[sel, "area_ha"] *= 3.0
+        pert.loc[sel, "production_mt"] = pert.loc[sel, "yield_t_ha"] * pert.loc[sel, "area_ha"]
+        again = _predictions(pert)
+        b, a = base.loc[base["year"] == y], again.loc[again["year"] == y]
+        assert len(b) > 0
+        pd.testing.assert_frame_equal(b[PREDICTED_COLUMNS], a[PREDICTED_COLUMNS])
+        # the actuals did move, so the test would see a leak
+        assert not np.allclose(b["actual_yield_t_ha"], a["actual_yield_t_ha"])
 
 
 def test_req61_selection_picks_simplest_qualifying_without_b3():
@@ -354,9 +465,18 @@ def test_run_selection_writes_models_predictions_and_report(tmp_path):
         assert bundle["training_period"] == (2002, 2012)
         assert hasattr(bundle["model"], "predict")
         assert bundle["needs_last_year"]
+        assert "area_model" not in bundle
+        assert set(bundle["recipes"]) == {"model", "b0", "b2"}
+        assert bundle["recipes"]["model"]["label"] == label
+        assert bundle["recipes"]["b0"]["class"] == "SameQuarterLastYear"
+        assert bundle["recipes"]["b2"]["class"] == "MeanPlusTrend"
+        assert bundle["area_recipe"]["class"] == "SameQuarterLastYearArea"
+        assert hasattr(bundle["b0_model"], "predict") and hasattr(bundle["b2_model"], "predict")
         nxt = df.loc[(df["year"] == 2012) & (df["crop"] == crop)].assign(year=2013)
-        area = bundle["area_model"].predict(nxt)
-        np.testing.assert_allclose(area, nxt["area_ha"])  # 2012 area forecasts 2013
+        fc = forecast_production(bundle, df, nxt)
+        np.testing.assert_allclose(fc["predicted_area_ha"], nxt["area_ha"])  # 2012 -> 2013
+        np.testing.assert_allclose(np.log(fc["pred_yield_t_ha"]),
+                                   bundle["model"].predict(nxt))  # same rows as the fit
 
     cand = pd.read_csv(tmp_path / "reports" / "selection.csv")
     assert set(cand["candidate"]) == {"B0", "B2", "B3", "AnomalyRidge:rain"}

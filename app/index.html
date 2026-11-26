@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AniSight: palay and corn yield early warning, Davao Region</title>
+  <meta name="description" content="Early-warning monitor for palay (rice) and corn yields in the Davao Region, forecast from PSA history before official release.">
+  <link rel="stylesheet" href="vendor/leaflet-1.9.4/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="vendor/leaflet-1.9.4/leaflet.js" defer></script>
+  <!-- Chart.js draws the province history chart (js/panel.js). -->
+  <script src="vendor/chart.js-4.6.2/chart.umd.min.js" defer></script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#unit-list-heading">Skip to the list of areas</a>
+  <header class="site-header">
+    <h1>AniSight</h1>
+    <p class="tagline">Early-warning monitor for palay (rice) and corn yields in the Davao Region</p>
+  </header>
+
+  <main>
+    <section class="controls" aria-label="Map controls">
+      <label for="crop">Crop</label>
+      <select id="crop"></select>
+
+      <label for="quarter">Quarter</label>
+      <div class="quarter-picker">
+        <button type="button" id="quarter-prev" aria-label="Previous quarter">&#9664;</button>
+        <select id="quarter"></select>
+        <button type="button" id="quarter-next" aria-label="Next quarter">&#9654;</button>
+      </div>
+    </section>
+
+    <p id="map-kind" class="map-kind" aria-live="polite"></p>
+    <p id="load-error" class="load-error" role="alert" hidden></p>
+
+    <div class="map-wrap">
+      <div id="map" role="region" aria-label="Map of reporting areas coloured by forecast vs usual yield; the same values are listed below"></div>
+      <p id="tile-notice" class="tile-notice" hidden>Background map unavailable; showing area shapes only.</p>
+    </div>
+    <div id="legend" class="legend"></div>
+
+    <section class="units" aria-labelledby="unit-list-heading">
+      <h2 id="unit-list-heading" tabindex="-1">Areas this quarter</h2>
+      <ul id="unit-list" class="unit-list"></ul>
+      <p id="selected-unit" class="selected-unit" aria-live="polite"></p>
+      <!-- Province detail panel (js/panel.js), filled on `anisight:select-unit`. -->
+      <section id="panel" class="panel" aria-labelledby="panel-title" hidden></section>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p id="vintage"></p>
+    <p>The forecast uses PSA history only. Rainfall and satellite greenness are shown as
+      context, not used in the forecast. Predicted production assumes the same harvested
+      area as the same quarter last year.</p>
+  </footer>
+</body>
+</html>

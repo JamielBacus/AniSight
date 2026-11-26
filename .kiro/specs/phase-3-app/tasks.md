@@ -1,34 +1,34 @@
 # Implementation Plan: Phase 3 — AniSight web app
 
-- [ ] 1. Phase 2 carry-over fixes (subagent: modeler)
+- [x] 1. Phase 2 carry-over fixes (subagent: modeler)
   - Per-target-year history in `forecast_production`; B0/B2 recipes in the bundles; resolve the unused `area_model`; fix the report's "B0-style fallback" wording
   - Per-crop ridge `n_fallback`; drop `area_ha` from test rows in `cross_validate`
   - Add the `build_predictions` leakage test and the multi-year `forecast_production` test
   - Re-run `cropyield select`; confirm B3 is still selected and metrics are unchanged
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 2. Forecast logging and live scoring (subagent: modeler)
-  - [ ] 2.1 Implement `models/forecast.py` (`make_forecast`, `log_forecast`) and `cropyield forecast --quarter [--backfill]`
+- [x] 2. Forecast logging and live scoring (subagent: modeler)
+  - [x] 2.1 Implement `models/forecast.py` (`make_forecast`, `log_forecast`) and `cropyield forecast --quarter [--backfill]`
     - Refuse already-published quarters unless `--backfill`
     - _Requirements: 2.1, 2.2, 2.3_
-  - [ ] 2.2 Implement `score_forecasts` with first-seen vs latest actuals and `cropyield score`
+  - [x] 2.2 Implement `score_forecasts` with first-seen vs latest actuals and `cropyield score`
     - _Requirements: 2.4_
-  - [ ] 2.3 Run `cropyield forecast --quarter 2026Q4` for real and show me the forecast table
+  - [x] 2.3 Run `cropyield forecast --quarter 2026Q4` for real and show me the forecast table
     - _Requirements: 2.1, 2.2_
 
-- [ ] 3. App data export (subagent: modeler)
+- [x] 3. App data export (subagent: modeler)
   - Implement `src/cropyield/export.py` and `cropyield export` writing `app/data/*` and `app/assets/figures/`
   - Expanding "historical normal" for map colouring; NaN → null; size budget; findings numbers read from reports
   - Tests for schema, NaN-free JSON, size budget and findings numbers matching `selection.csv`
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 4. App skeleton and map (subagent: web-dev)
+- [x] 4. App skeleton and map (subagent: web-dev)
   - `app/index.html`, `css/style.css`, `js/main.js`, `js/map.js`, vendored Leaflet and Chart.js (pinned, with licences)
   - Crop and quarter controls, URL hash state, diverging colour scale with legend, combined units, works without tiles
   - `js/lib/format.js` with `node --test` tests
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 7.2, 7.3_
 
-- [ ] 5. Province detail panel (subagent: web-dev)
+- [-] 5. Province detail panel (subagent: web-dev)
   - History chart with 80% band and B0/B2 toggles; latest forecast card with production note; conditions-vs-normal card; flags
   - Keyboard-accessible province list as an alternative to the map
   - _Requirements: 5.1, 5.2, 5.3, 5.4_

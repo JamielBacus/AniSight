@@ -154,5 +154,37 @@ def select(config_dir: Optional[str] = typer.Option(None, help=CONFIG_HELP)) -> 
     mod.main(_argv(config_dir=config_dir))
 
 
+@app.command()
+def forecast(
+    quarter: str = typer.Option(..., help="target quarter, YYYYQn (e.g. 2026Q4)"),
+    backfill: bool = typer.Option(
+        False, "--backfill", help="allow a quarter PSA already published; rows are "
+                                  "marked backfill=True"),
+    config_dir: Optional[str] = typer.Option(None, help=CONFIG_HELP),
+) -> None:
+    """Forecast a quarter per reporting unit and crop; append to reports/forecasts.csv."""
+    from cropyield.models import forecast as mod
+    mod.main(_argv(config_dir=config_dir, quarter=quarter)
+             + (["--backfill"] if backfill else []))
+
+
+@app.command()
+def score(config_dir: Optional[str] = typer.Option(None, help=CONFIG_HELP)) -> None:
+    """Score logged forecasts against PSA actuals (first-seen and latest); write
+    reports/live_accuracy.csv and reports/live_accuracy_summary.csv."""
+    from cropyield.models import forecast as mod
+    mod.score_main(_argv(config_dir=config_dir))
+
+
+@app.command("export")
+def export_cmd(
+    config_dir: Optional[str] = typer.Option(None, help=CONFIG_HELP),
+    app_dir: Optional[str] = typer.Option(None, help="site folder (default: <repo>/app)"),
+) -> None:
+    """Write app/data/*.json, app/data/units.geojson and app/assets/figures/ for the site."""
+    from cropyield import export as mod
+    mod.main(_argv(config_dir=config_dir, app_dir=app_dir))
+
+
 if __name__ == "__main__":
     app()

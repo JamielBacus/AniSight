@@ -370,8 +370,12 @@ def test_evaluate_cli_satellite_models(tmp_path):
     assert set(log.loc[modis_era, "era"]) == {"modis"}
     assert set(log.loc[~modis_era, "era"]) == {"s2"}
     assert set(log.loc[log["era"] == "s2", "test_years"]) == {"2021-2023"}
-    ridge = log.loc[log["model"] == "AnomalyRidge:modis"]
-    assert all('"n_fallback": 1' in p for p in ridge["params"])
+    ridge = log.loc[log["model"] == "AnomalyRidge:modis"].set_index("crop")
+    # per crop, like B0: the one missing value is in a corn row
+    for crop, n in {"corn": 1, "palay": 0}.items():
+        p = json.loads(ridge.loc[crop, "params"])
+        assert p["n_fallback"] == n
+        assert p["n_fallback_by_crop"] == {"corn": 1, "palay": 0}
     assert (tmp_path / "reports" / "model_metrics.csv").exists()
     assert not (tmp_path / "reports" / "baseline_metrics.csv").exists()
 
