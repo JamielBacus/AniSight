@@ -6,19 +6,26 @@ import pandas as pd
 import pytest
 
 from cropyield.config import Era, load_config
-from cropyield.models.baselines import B0B2Blend, MeanPlusTrend, SameQuarterLastYear
+from cropyield.models.baselines import (B0B2Blend, MeanPlusTrend, SameQuarterLastYear,
+                                        SameQuarterLastYearArea)
 from cropyield.models.data import prepare_modeling_table
 from cropyield.models.evaluate import EXPERIMENT_COLUMNS, cross_validate, log_experiment
-from cropyield.models.report import write_report
+from cropyield.models.report import production_errors, req61_selection, write_report
 from cropyield.models.select import (CANDIDATE_COLUMNS, PREDICTION_COLUMNS,
                                      best_satellite_model, earlier_fold_intervals,
-                                     expanding_anomalies, model_factory, run_selection,
+                                     expanding_anomalies, forecast_production,
+                                     model_factory, predicted_area_oof, run_selection,
                                      select_candidate)
 from cropyield.models.satellite import FEATURE_SETS
 
 UNITS = ["Davao City", "Davao Oriental"]
 ERAS = {"modis": Era(start_year=2002, first_test_year=2008),
         "s2": Era(start_year=2005, first_test_year=2009)}
+
+
+def _area(u: int, q: int, y: int) -> float:
+    """Synthetic harvested area (ha), distinct per unit, quarter and year."""
+    return 1000.0 + 500.0 * u + 100.0 * q + 10.0 * (y - 2002)
 
 
 def _features(years=range(2002, 2013)) -> pd.DataFrame:
@@ -32,8 +39,8 @@ def _features(years=range(2002, 2013)) -> pd.DataFrame:
                     ly = 1.0 + 0.1 * u + 0.05 * q + 0.02 * (y - 2002) + 0.05 * rng.normal()
                     row = {"province": unit, "reporting_unit": unit, "crop": crop,
                            "year": y, "quarter": q, "quality_flag": "ok",
-                           "yield_t_ha": float(np.exp(ly)), "area_ha": 1000.0,
-                           "production_mt": 1000.0 * float(np.exp(ly))}
+                           "yield_t_ha": float(np.exp(ly)), "area_ha": _area(u, q, y),
+                           "production_mt": _area(u, q, y) * float(np.exp(ly))}
                     for f in {*FEATURE_SETS["modis"], *FEATURE_SETS["rain"]}:
                         row[f] = float(rng.normal())
                     rows.append(row)
@@ -166,6 +173,147 @@ def test_anomalies_are_per_group():
     assert a.iloc[7] == pytest.approx(4.0)
 
 
+# --- forecastable area -------------------------------------------------------------
+
+def _area_rows(years, unit="A", quarter=1, crop="corn"):
+    return pd.DataFrame({"reporting_unit": unit, "crop": crop, "quarter": quarter,
+                         "year": list(years),
+                         "area_ha": [100.0 + 10 * (y - 2000) for y in years]})
+
+
+def test_predicted_area_uses_only_last_year():
+    d = pd.concat([_area_rows(range(2000, 2008)), _area_rows(range(2000, 2008), unit="B")],
+                  ignore_index=True)
+    first = predicted_area_oof(d, first_test_year=2005)
+    assert not first["area_fallback"].any()
+    test = d.loc[first.index]
+    np.testing.assert_allclose(first["predicted_area_ha"], 100.0 + 10 * (test["year"] - 2001))
+    # perturbing year-Y areas does not change year-Y predicted areas
+    pert = d.copy()
+    is_2006 = pert["year"] == 2006
+    pert.loc[is_2006, "area_ha"] *= 50
+    again = predicted_area_oof(pert, first_test_year=2005)
+    rows_2006 = d.index[is_2006]
+    np.testing.assert_allclose(again.loc[rows_2006, "predicted_area_ha"],
+                               first.loc[rows_2006, "predicted_area_ha"])
+
+
+def test_predicted_area_falls_back_when_last_year_missing():
+    # unit A has no 2004 row (e.g. a regrouping), so 2005 falls back to its mean area
+    hist = _area_rows([2000, 2001, 2002, 2003])
+    m = SameQuarterLastYearArea().fit(hist)
+    target = pd.DataFrame({"reporting_unit": ["A", "A", "Z"], "crop": "corn",
+                           "quarter": [1, 2, 1], "year": [2005, 2004, 2005]})
+    pred = m.predict(target)
+    # A Q1 2005: no 2004 -> unit/crop/quarter mean of 2000-2003
+    assert pred.iloc[0] == pytest.approx(hist["area_ha"].mean())
+    # A Q2 and unseen unit Z: crop-quarter / crop mean (only A Q1 exists -> same mean)
+    assert pred.iloc[1] == pytest.approx(hist["area_ha"].mean())
+    assert pred.iloc[2] == pytest.approx(hist["area_ha"].mean())
+    assert m.fallback_mask(target).tolist() == [True, True, True]
+    # A Q1 2004 has 2003 available: no fallback
+    t2 = target.iloc[[0]].assign(year=2004)
+    assert m.predict(t2).iloc[0] == pytest.approx(130.0)
+    assert not m.fallback_mask(t2).iloc[0]
+
+
+def test_area_fallback_level_names_the_level_used():
+    hist = pd.concat([_area_rows([2000, 2001, 2002, 2003]),
+                      _area_rows([2002, 2003], unit="B", quarter=2)], ignore_index=True)
+    m = SameQuarterLastYearArea().fit(hist)
+    target = pd.DataFrame({"reporting_unit": ["A", "A", "A", "Z", "Z"],
+                           "crop": ["corn", "corn", "corn", "corn", "palay"],
+                           "quarter": [1, 1, 2, 3, 1], "year": [2004, 2005, 2004, 2004, 2004]})
+    assert m.fallback_level(target).tolist() == [
+        "last_year", "unit_quarter_mean", "crop_quarter_mean", "crop_mean", "overall"]
+    assert m.has_own_history(target).tolist() == [True, True, False, False, False]
+
+
+def test_predicted_area_oof_is_nan_without_own_history():
+    # unit N appears in 2006 (newly split off): its 2006 row has no own area history
+    d = pd.concat([_area_rows(range(2000, 2008)), _area_rows([2006, 2007], unit="N")],
+                  ignore_index=True)
+    out = predicted_area_oof(d, first_test_year=2005)
+    key = d.loc[out.index, ["reporting_unit", "year"]].apply(tuple, axis=1)
+    lvl = dict(zip(key, out["area_fallback_level"]))
+    area = dict(zip(key, out["predicted_area_ha"]))
+    assert lvl[("N", 2006)] == "crop_quarter_mean" and np.isnan(area[("N", 2006)])
+    assert lvl[("N", 2007)] == "last_year" and area[("N", 2007)] == pytest.approx(160.0)
+    raw = predicted_area_oof(d, first_test_year=2005, mask_no_history=False)
+    assert np.isfinite(raw.loc[out.index[[k == ("N", 2006) for k in key]],
+                               "predicted_area_ha"]).all()
+
+
+def test_forecast_production_nan_for_unit_without_history():
+    df = prepare_modeling_table(_features())
+    model = SameQuarterLastYear().fit(df.loc[df["year"] <= 2011])
+    bundle = {"model": model, "interval": {"log_resid_lo": -0.1, "log_resid_hi": 0.1}}
+    target = df.loc[df["year"] == 2012]
+    unit = target["reporting_unit"].iloc[0]
+    # history: this unit has no rows at all (new unit); another unit misses only Y-1
+    other = sorted(set(target["reporting_unit"]) - {unit})[0]
+    hist = df.loc[(df["reporting_unit"] != unit)
+                  & ~((df["reporting_unit"] == other) & (df["year"] == 2011))]
+    out = forecast_production(bundle, hist, target)
+    new = target["reporting_unit"] == unit
+    assert (out.loc[new, "area_fallback_level"] == "crop_quarter_mean").all()
+    for c in ("predicted_area_ha", "pred_production_mt", "pred_production_lo_mt",
+              "pred_production_hi_mt"):
+        assert out.loc[new, c].isna().all()
+    assert out.loc[new, "pred_yield_t_ha"].notna().all()
+    # unit with history but no Y-1 row still gets a forecast (its own mean area)
+    gap = target["reporting_unit"] == other
+    assert (out.loc[gap, "area_fallback_level"] == "unit_quarter_mean").all()
+    assert out.loc[gap, "pred_production_mt"].notna().all()
+    own = hist.loc[(hist["reporting_unit"] == other) & (hist["year"] < 2012)].groupby(["crop", "quarter"])["area_ha"]
+    expect = own.mean().loc[pd.MultiIndex.from_frame(target.loc[gap, ["crop", "quarter"]])]
+    np.testing.assert_allclose(out.loc[gap, "predicted_area_ha"], expect.to_numpy())
+
+
+def test_forecast_production_is_yield_times_last_year_area():
+    df = prepare_modeling_table(_features())
+    train = df.loc[df["year"] <= 2011]
+    model = SameQuarterLastYear().fit(train)
+    bundle = {"model": model, "interval": {"log_resid_lo": -0.1, "log_resid_hi": 0.1}}
+    target = df.loc[df["year"] == 2012]
+    perturbed = df.copy()
+    perturbed.loc[perturbed["year"] == 2012, "area_ha"] *= 3  # target-year area ignored
+    out = forecast_production(bundle, perturbed, target)
+    last = df.loc[df["year"] == 2011].set_index(["reporting_unit", "crop", "quarter"])
+    expect = last.loc[pd.MultiIndex.from_frame(target[["reporting_unit", "crop",
+                                                       "quarter"]]), "area_ha"]
+    np.testing.assert_allclose(out["predicted_area_ha"], expect.to_numpy())
+    np.testing.assert_allclose(out["pred_production_mt"],
+                               out["pred_yield_t_ha"] * out["predicted_area_ha"])
+    np.testing.assert_allclose(out["pred_production_lo_mt"],
+                               out["pred_lo_t_ha"] * out["predicted_area_ha"])
+    assert (out["pred_production_lo_mt"] < out["pred_production_hi_mt"]).all()
+
+
+def test_req61_selection_picks_simplest_qualifying_without_b3():
+    c = pd.DataFrame({
+        "crop": ["corn"] * 4 + ["palay"] * 3,
+        "candidate": ["B0", "B2", "B3", "AnomalyRidge:rain", "B0", "B2", "B3"],
+        "mae": [0.18, 0.20, 0.16, 0.17, 0.30, 0.30, 0.27],
+        "qualifies": [True, False, True, True, False, False, True]})
+    assert req61_selection(c) == {"corn": "B0", "palay": "B2"}
+
+
+def test_production_errors_splits_fallback_and_skips_no_forecast():
+    pred = pd.DataFrame({
+        "crop": "palay", "model": "B3", "pred_yield_t_ha": 4.0, "b0_pred_yield_t_ha": 4.0,
+        "b2_pred_yield_t_ha": 4.0, "actual_area_ha": 100.0,
+        "predicted_area_ha": [100.0, 110.0, 150.0, np.nan],
+        "area_fallback": [False, False, True, True],
+        "actual_production_mt": 400.0})
+    t = production_errors(pred)
+    sel = t.loc[t["yield model"] == "B3 (selected)"].set_index("rows")
+    assert sel.loc["all with area forecast", "n"] == 3
+    assert sel.loc["last-year area only", "MAPE %, predicted area"] == "5.00"
+    assert sel.loc["area fallback only", "MAPE %, predicted area"] == "50.00"
+    assert sel.loc["all with area forecast", "median APE %, predicted area"] == "10.00"
+
+
 # --- end to end --------------------------------------------------------------------
 
 def test_run_selection_writes_models_predictions_and_report(tmp_path):
@@ -189,13 +337,26 @@ def test_run_selection_writes_models_predictions_and_report(tmp_path):
     assert (pred.loc[has, "pred_lo_t_ha"] <= pred.loc[has, "pred_yield_t_ha"]).all()
     assert (pred.loc[has, "pred_hi_t_ha"] >= pred.loc[has, "pred_yield_t_ha"]).all()
     np.testing.assert_allclose(pred["pred_production_mt"],
-                               pred["pred_yield_t_ha"] * pred["area_ha"])
+                               pred["pred_yield_t_ha"] * pred["predicted_area_ha"])
+    # no regroupings in the fixture: predicted area is exactly last year's PSA area
+    assert not pred["area_fallback"].any()
+    u = pred["reporting_unit"].map({n: i for i, n in enumerate(UNITS)})
+    np.testing.assert_allclose(pred["predicted_area_ha"],
+                               [_area(a, q, y - 1) for a, q, y in
+                                zip(u, pred["quarter"], pred["year"])])
+    np.testing.assert_allclose(pred["actual_area_ha"],
+                               [_area(a, q, y) for a, q, y in
+                                zip(u, pred["quarter"], pred["year"])])
     for crop, (label, _) in res.selected.items():
         assert (pred.loc[pred["crop"] == crop, "model"] == label).all()
         bundle = joblib.load(tmp_path / "models" / f"{crop}.joblib")
         assert bundle["model_name"] == label
         assert bundle["training_period"] == (2002, 2012)
         assert hasattr(bundle["model"], "predict")
+        assert bundle["needs_last_year"]
+        nxt = df.loc[(df["year"] == 2012) & (df["crop"] == crop)].assign(year=2013)
+        area = bundle["area_model"].predict(nxt)
+        np.testing.assert_allclose(area, nxt["area_ha"])  # 2012 area forecasts 2013
 
     cand = pd.read_csv(tmp_path / "reports" / "selection.csv")
     assert set(cand["candidate"]) == {"B0", "B2", "B3", "AnomalyRidge:rain"}
@@ -216,6 +377,12 @@ def test_run_selection_writes_models_predictions_and_report(tmp_path):
     text = out.read_text()
     assert "did not improve on the baselines" in text
     assert "post hoc" in text
+    assert "True out-of-sample test: the next PSA releases" in text
+    assert "2013 Q1" in text  # fixture data end at 2012 Q4
+    assert "## Predicted production" in text
+    assert "Deviation from Requirement 6.1" in text
+    assert "0 of" in text and "have no area forecast" in text
+    assert (pred["area_fallback_level"] == "last_year").all()
     for name in ("mae_by_model.png", "residuals_by_year.png",
                  "observed_vs_predicted_corn.png"):
         assert (tmp_path / "reports" / "figures" / name).exists()

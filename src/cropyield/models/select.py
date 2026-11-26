@@ -17,7 +17,10 @@ list, training period and forecast interval to `<paths.models>/<crop>.joblib`.
 
 Predictions (`<paths.processed>/predictions.parquet`): out-of-fold history of the
 selected model per crop with an 80% interval and "conditions vs normal" columns; see
-PREDICTION_COLUMNS for every column's definition.
+PREDICTION_COLUMNS for every column's definition. Predicted production uses a
+forecastable area (`SameQuarterLastYearArea`: last year's PSA area, B0-style fallback),
+not the PSA area of the predicted quarter, which is released together with production.
+`forecast_production` applies the same rule to future quarters.
 """
 
 from __future__ import annotations
@@ -36,7 +39,8 @@ import pandas as pd
 
 from cropyield.config import DEFAULT_CONFIG_DIR, Config, load_config
 from cropyield.models.baselines import (GROUP, B0B2Blend, MeanPlusTrend,
-                                        SameQuarterLastYear, UnitQuarterMean)
+                                        SameQuarterLastYear, SameQuarterLastYearArea,
+                                        UnitQuarterMean)
 from cropyield.models.data import (UNIT_KEYS, era_rows, fold_summary, load_modeling_table,
                                    rolling_folds)
 from cropyield.models.evaluate import (RIDGE_ALPHA, Model, bootstrap_mae_diff,
@@ -84,9 +88,21 @@ PREDICTION_COLUMNS: dict[str, str] = {
     "b0_pred_yield_t_ha": "out-of-fold B0 (same quarter last year) prediction",
     "b0_fallback": "B0 had no same-quarter value for year-1 and used B1 (unit-quarter "
                    "mean); happens at reporting-unit regroupings",
-    "area_ha": "PSA harvested area (ha)",
-    "actual_production_mt": "PSA production (t)",
-    "pred_production_mt": "pred_yield_t_ha x area_ha (PSA area, known at release)",
+    "predicted_area_ha": "forecastable: last year's PSA area for the same unit/crop/quarter, "
+                         "else the unit/crop/quarter mean area over years < year; only "
+                         "years < year used. NaN (no area forecast) when the unit has no "
+                         "own area history (area_fallback_level crop_quarter_mean or "
+                         "coarser), e.g. a newly split unit",
+    "area_fallback": "predicted_area_ha had no same-quarter area for year-1 and used the "
+                     "fallback chain; separate from b0_fallback (same rule applied to area)",
+    "area_fallback_level": "source of the area: last_year, unit_quarter_mean, or (no area "
+                           "forecast) crop_quarter_mean, crop_mean, overall",
+    "pred_production_mt": "pred_yield_t_ha x predicted_area_ha (forecastable); NaN when "
+                          "predicted_area_ha is NaN",
+    "actual_area_ha": "PSA actual harvested area (ha), not available at forecast time; "
+                      "for historical comparison only",
+    "actual_production_mt": "PSA actual production (t), not available at forecast time; "
+                            "for historical comparison only",
     "n_train_years": "training years in this row's fold",
     **{f"{f}_anom": (f"{f} minus its mean over earlier years (< year, MODIS era from "
                      f"2002) of the same reporting unit, crop and quarter; NaN with fewer "
@@ -231,6 +247,30 @@ def b0_fallback_oof(d: pd.DataFrame, first_test_year: int) -> pd.Series:
     return pd.concat(parts).astype(bool) if parts else pd.Series(dtype=bool)
 
 
+def predicted_area_oof(d: pd.DataFrame, first_test_year: int,
+                       mask_no_history: bool = True) -> pd.DataFrame:
+    """Per test row of the rolling folds of `d`: forecastable area and its fallback info.
+
+    For test year Y, `SameQuarterLastYearArea` is fitted on the fold's training rows
+    (years < Y), so year Y's own PSA area is never used. Returns (index = test rows)
+    `predicted_area_ha`, `area_fallback` and `area_fallback_level`. With
+    `mask_no_history` (default), `predicted_area_ha` is NaN where the unit has no own
+    area history (level crop_quarter_mean or coarser): no area forecast.
+    """
+    cols = ["predicted_area_ha", "area_fallback", "area_fallback_level"]
+    parts = []
+    for train_idx, test_idx, _ in rolling_folds(d, first_test_year):
+        m = SameQuarterLastYearArea().fit(d.iloc[train_idx])
+        t = d.iloc[test_idx]
+        area = m.predict(t)
+        if mask_no_history:
+            area = area.where(m.has_own_history(t))
+        parts.append(pd.DataFrame({"predicted_area_ha": area,
+                                   "area_fallback": m.fallback_mask(t).astype(bool),
+                                   "area_fallback_level": m.fallback_level(t)}))
+    return pd.concat(parts) if parts else pd.DataFrame(columns=cols)
+
+
 def expanding_anomalies(df: pd.DataFrame, features: Sequence[str],
                         min_years: int = MIN_ANOMALY_YEARS) -> pd.DataFrame:
     """Each feature minus its mean over earlier years of the same unit, crop and quarter.
@@ -286,8 +326,12 @@ def selection_path(cfg: Config) -> Path:
 
 def build_predictions(df: pd.DataFrame, selected: Mapping[str, str],
                       oofs: Mapping[str, pd.DataFrame], b0_fallback: pd.Series,
-                      era_df: pd.DataFrame) -> pd.DataFrame:
-    """Out-of-fold history of the selected model per crop (PREDICTION_COLUMNS)."""
+                      era_df: pd.DataFrame, area: pd.DataFrame) -> pd.DataFrame:
+    """Out-of-fold history of the selected model per crop (PREDICTION_COLUMNS).
+
+    `area` is `predicted_area_oof` output; predicted production uses it, never the
+    PSA area of the predicted quarter.
+    """
     anoms = expanding_anomalies(era_df, ANOMALY_SOURCE_FEATURES)
     parts = []
     for crop, label in sorted(selected.items()):
@@ -306,9 +350,12 @@ def build_predictions(df: pd.DataFrame, selected: Mapping[str, str],
         p["b2_pred_yield_t_ha"] = oofs[REFERENCE].loc[o.index, "pred_yield_t_ha"]
         p["b0_pred_yield_t_ha"] = oofs[NAIVE].loc[o.index, "pred_yield_t_ha"]
         p["b0_fallback"] = b0_fallback.loc[o.index].astype(bool)
-        p["area_ha"] = src["area_ha"].astype(float)
+        p["predicted_area_ha"] = area.loc[o.index, "predicted_area_ha"].astype(float)
+        p["area_fallback"] = area.loc[o.index, "area_fallback"].astype(bool)
+        p["area_fallback_level"] = area.loc[o.index, "area_fallback_level"].astype(str)
+        p["pred_production_mt"] = p["pred_yield_t_ha"] * p["predicted_area_ha"]
+        p["actual_area_ha"] = src["area_ha"].astype(float)
         p["actual_production_mt"] = src["production_mt"].astype(float)
-        p["pred_production_mt"] = p["pred_yield_t_ha"] * p["area_ha"]
         p["n_train_years"] = o["n_train_years"].astype(int)
         for c in anoms.columns:
             p[c] = anoms.loc[o.index, c]
@@ -352,12 +399,18 @@ def fit_final(label: str, crop: str, era_df: pd.DataFrame, oof: pd.DataFrame,
                   "forecasting. Where last year's value is missing (reporting-unit "
                   "regroupings, e.g. a unit's first year after it is split off), B0 "
                   "falls back to B1 (unit-quarter mean).")
+    notes += (" Production forecast = exp(prediction) x area_model.predict(rows): last "
+              "year's PSA area of the same unit/crop/quarter (B0-style fallback), because "
+              "year Y's area is published with year Y's production. Refit (or use "
+              "forecast_production with the latest PSA history) before forecasting.")
+    area_model = SameQuarterLastYearArea().fit(era_df)
     return {
         "crop": crop, "model_name": label, "model": model,
+        "area_model": area_model,
         "features": model_features(label), "era": era,
         "training_period": (int(era_df["year"].min()), int(era_df["year"].max())),
         "n_train_rows": int(len(era_df)),
-        "needs_last_year": uses_b0,
+        "needs_last_year": True,  # B0-based yield models and the area rule both need Y-1
         "interval": {"level": INTERVAL_QUANTILES[1] - INTERVAL_QUANTILES[0],
                      "log_resid_lo": float(lo), "log_resid_hi": float(hi),
                      "quantiles": INTERVAL_QUANTILES, "n_resid": int(len(resid)),
@@ -366,6 +419,41 @@ def fit_final(label: str, crop: str, era_df: pd.DataFrame, oof: pd.DataFrame,
         "notes": notes,
         "created": timestamp.isoformat(timespec="seconds"),
     }
+
+
+def forecast_production(bundle: Mapping[str, Any], history: pd.DataFrame,
+                        target: pd.DataFrame) -> pd.DataFrame:
+    """Forecast yield, area and production for `target` rows from a `<crop>.joblib` bundle.
+
+    `history` is the latest PSA modeling table; only its rows with year < the target
+    rows' year (per row: min target year) are used for the area rule, so the target
+    quarter's own PSA area is never read. The yield model is used as saved (refit it on
+    the latest history first if it uses B0). Returns (index = target.index)
+    pred_yield_t_ha, predicted_area_ha, area_fallback, area_fallback_level,
+    pred_production_mt, and pred_lo/hi_t_ha and pred_production_lo/hi_mt from the
+    bundle's interval offsets. Where the unit has no own area history for the crop and
+    quarter (area_fallback_level crop_quarter_mean or coarser), predicted_area_ha and
+    the production columns are NaN ("no area forecast"); yield is still predicted.
+    """
+    y0 = int(target["year"].min())
+    area_model = SameQuarterLastYearArea().fit(history.loc[history["year"] < y0])
+    log_pred = np.asarray(bundle["model"].predict(target), dtype=float)
+    iv = bundle["interval"]
+    out = pd.DataFrame(index=target.index)
+    out["pred_yield_t_ha"] = np.exp(log_pred)
+    out["pred_lo_t_ha"] = np.exp(log_pred + iv["log_resid_lo"])
+    out["pred_hi_t_ha"] = np.exp(log_pred + iv["log_resid_hi"])
+    out["predicted_area_ha"] = area_model.predict(target)
+    out["area_fallback"] = area_model.fallback_mask(target).astype(bool)
+    out["area_fallback_level"] = area_model.fallback_level(target)
+    # no own area history (e.g. a newly split unit): no area forecast, yield is kept
+    out["predicted_area_ha"] = out["predicted_area_ha"].where(
+        area_model.has_own_history(target))
+    for a, b in (("pred_production_mt", "pred_yield_t_ha"),
+                 ("pred_production_lo_mt", "pred_lo_t_ha"),
+                 ("pred_production_hi_mt", "pred_hi_t_ha")):
+        out[a] = out[b] * out["predicted_area_ha"]
+    return out
 
 
 def run_selection(cfg: Config, df: pd.DataFrame, timestamp: datetime | None = None,
@@ -405,6 +493,7 @@ def run_selection(cfg: Config, df: pd.DataFrame, timestamp: datetime | None = No
     d = era_rows(df, era, eras)
     first_test = eras[era].first_test_year
     fallback = b0_fallback_oof(d, first_test)
+    area = predicted_area_oof(d, first_test)
 
     if write:
         fb_crop = fallback.groupby(df.loc[fallback.index, "crop"]).sum()
@@ -428,7 +517,7 @@ def run_selection(cfg: Config, df: pd.DataFrame, timestamp: datetime | None = No
     candidates = pd.concat(tables, ignore_index=True)
 
     predictions = build_predictions(df, {c: s[0] for c, s in selected.items()}, oofs,
-                                    fallback, d)
+                                    fallback, d, area)
     coverage = interval_coverage(predictions)
     model_paths: dict[str, Path] = {}
     if write:

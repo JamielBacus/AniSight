@@ -22,6 +22,8 @@ import pandas as pd
 
 GROUP = ["reporting_unit", "crop", "quarter"]
 PRED_NAME = "pred_log_yield"
+# Names of the fallback-chain levels above, finest first.
+FALLBACK_LEVELS = ("unit_quarter_mean", "crop_quarter_mean", "crop_mean", "overall")
 
 
 def _check(df: pd.DataFrame, cols: list[str]) -> None:
@@ -69,6 +71,17 @@ class UnitQuarterMean:
         mean[todo] = self.global_mean_
         year[todo] = self.global_year_
         return mean, year
+
+    def fallback_level(self, df: pd.DataFrame) -> pd.Series:
+        """Level of the fallback chain each row's prediction comes from (FALLBACK_LEVELS)."""
+        _check(df, GROUP)
+        level = pd.Series(FALLBACK_LEVELS[-1], index=df.index, dtype=object)
+        found = np.zeros(len(df), dtype=bool)
+        for name, (keys, m, _) in zip(FALLBACK_LEVELS, self.levels_):
+            hit = ~found & ~np.isnan(_lookup(df, m, keys))
+            level[hit] = name
+            found |= hit
+        return level
 
     def predict(self, df: pd.DataFrame) -> pd.Series:
         _check(df, GROUP)
@@ -135,12 +148,56 @@ class SameQuarterLastYear:
     def fallback_mask(self, df: pd.DataFrame) -> pd.Series:
         return pd.Series(np.isnan(self._last_year(df)), index=df.index)
 
+    def fallback_level(self, df: pd.DataFrame) -> pd.Series:
+        """"last_year" where Y-1 is in the training data, else the B1 fallback level."""
+        level = self.b1_.fallback_level(df)
+        level[~np.isnan(self._last_year(df))] = "last_year"
+        return level
+
     def predict(self, df: pd.DataFrame) -> pd.Series:
         last = self._last_year(df)
         miss = np.isnan(last)
         if miss.any():
             last[miss] = self.b1_.predict(df.loc[miss]).to_numpy()
         return pd.Series(last, index=df.index, name=PRED_NAME)
+
+
+class SameQuarterLastYearArea:
+    """Forecastable harvested area: PSA `area_ha` of the same unit, crop and quarter in Y-1.
+
+    PSA publishes area in the same release as production, so year Y's own area is not
+    known when forecasting Y. This applies B0's rule to `area_ha` instead of log-yield:
+    last year's value from the rows passed to `fit`, else B0's fallback chain on area
+    (B1 = unit/crop/quarter mean area over the training rows, then crop-quarter mean,
+    crop mean, overall mean; arithmetic means in hectares). Pass only rows with
+    year < Y to `fit`. `fallback_mask(df)` tells which rows had no Y-1 area;
+    `fallback_level(df)` names the level used ("last_year", then FALLBACK_LEVELS).
+    Levels in NO_HISTORY_LEVELS mean the unit has no own area history for that
+    crop and quarter, so the value is another units' mean (`has_own_history`).
+    """
+
+    NAME = "predicted_area_ha"
+    NO_HISTORY_LEVELS = frozenset(FALLBACK_LEVELS[1:])
+
+    def fit(self, train_df: pd.DataFrame) -> SameQuarterLastYearArea:
+        _check(train_df, [*GROUP, "year", "area_ha"])
+        d = train_df.loc[train_df["area_ha"].notna(), [*GROUP, "year", "area_ha"]]
+        # SameQuarterLastYear works on a column named log_yield; here it holds area (ha).
+        self.b0_ = SameQuarterLastYear().fit(d.rename(columns={"area_ha": "log_yield"}))
+        return self
+
+    def fallback_mask(self, df: pd.DataFrame) -> pd.Series:
+        return self.b0_.fallback_mask(df)
+
+    def fallback_level(self, df: pd.DataFrame) -> pd.Series:
+        return self.b0_.fallback_level(df).rename("area_fallback_level")
+
+    def has_own_history(self, df: pd.DataFrame) -> pd.Series:
+        """True where the area comes from the unit's own same crop/quarter history."""
+        return ~self.fallback_level(df).isin(self.NO_HISTORY_LEVELS)
+
+    def predict(self, df: pd.DataFrame) -> pd.Series:
+        return self.b0_.predict(df).rename(self.NAME)
 
 
 class B0B2Blend:

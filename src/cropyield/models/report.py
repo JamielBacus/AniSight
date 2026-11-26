@@ -23,7 +23,7 @@ import pandas as pd  # noqa: E402
 
 from cropyield.config import Config  # noqa: E402
 from cropyield.models.baselines import MeanPlusTrend  # noqa: E402
-from cropyield.models.data import era_rows  # noqa: E402
+from cropyield.models.data import UNIT_KEYS, era_rows  # noqa: E402
 from cropyield.models.evaluate import (bootstrap_mae_diff, cross_validate,  # noqa: E402
                                        experiments_path, metrics)
 from cropyield.models.satellite import FEATURE_SETS, AnomalyRidge  # noqa: E402
@@ -32,7 +32,8 @@ from cropyield.models.select import (ANOMALY_SOURCE_FEATURES, CONDITIONS_COLUMNS
                                      MIN_INTERVAL_YEARS, NAIVE, PREDICTION_COLUMNS,
                                      REFERENCE, SATELLITE_CANDIDATE_MODELS,
                                      SATELLITE_CANDIDATE_SETS, SelectionResult,
-                                     models_dir, predictions_path, selection_path)
+                                     models_dir, predicted_area_oof, predictions_path,
+                                     selection_path)
 
 log = logging.getLogger(__name__)
 
@@ -110,6 +111,84 @@ def per_unit_errors(res: SelectionResult) -> pd.DataFrame:
         m[f"mae_{ref}"] = r["mae"].to_numpy()
     m.insert(1, "model", m["crop"].map({c: s[0] for c, s in res.selected.items()}))
     return m
+
+
+PRODUCTION_SUBSETS: tuple[tuple[str, str], ...] = (
+    ("all with area forecast", "all"), ("last-year area only", "last_year"),
+    ("area fallback only", "fallback"))
+
+
+def production_errors(pred: pd.DataFrame) -> pd.DataFrame:
+    """Production MAE (t), MAPE and median APE (%) per crop for the selected model, B0, B2.
+
+    Rows without an area forecast (`predicted_area_ha` NaN) are excluded. Each crop is
+    split into PRODUCTION_SUBSETS: all rows with an area forecast, rows whose area is
+    last year's PSA area, and rows whose area used the fallback (`area_fallback`).
+    "predicted area" uses `predicted_area_ha` (forecastable); "actual area" uses the PSA
+    area of the same quarter (not forecastable, shown for comparison only).
+    """
+    rows = []
+    for crop, g in pred.groupby("crop", sort=True):
+        act = g["actual_production_mt"]
+        base = act.notna() & (act > 0) & g["predicted_area_ha"].notna()
+        for subset, key in PRODUCTION_SUBSETS:
+            ok = base & {"all": True, "last_year": ~g["area_fallback"],
+                         "fallback": g["area_fallback"]}[key]
+            if not ok.any():
+                continue
+            for name, col in ((f"{g['model'].iloc[0]} (selected)", "pred_yield_t_ha"),
+                              (NAIVE, "b0_pred_yield_t_ha"),
+                              (REFERENCE, "b2_pred_yield_t_ha")):
+                row: dict[str, object] = {"crop": crop, "rows": subset, "yield model": name,
+                                          "n": int(ok.sum())}
+                for lab, area in (("predicted area", "predicted_area_ha"),
+                                  ("actual area", "actual_area_ha")):
+                    e = (g.loc[ok, col] * g.loc[ok, area] - act[ok]).abs()
+                    ape = e / act[ok]
+                    row[f"MAE t, {lab}"] = f"{e.mean():,.0f}"
+                    row[f"MAPE %, {lab}"] = f"{ape.mean() * 100:.2f}"
+                    row[f"median APE %, {lab}"] = f"{ape.median() * 100:.2f}"
+                rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def no_area_forecast_rows(pred: pd.DataFrame, unmasked: pd.DataFrame) -> pd.DataFrame:
+    """Rows of `pred` without an area forecast, with the area the fallback would have used.
+
+    `unmasked` has UNIT_KEYS and `predicted_area_ha` from
+    `predicted_area_oof(..., mask_no_history=False)`. Returns those rows with
+    `fallback_area_ha` and the selected model's production APE (%) had it been used.
+    """
+    r = pred.loc[pred["predicted_area_ha"].isna(),
+                 [*UNIT_KEYS, "area_fallback_level", "actual_area_ha", "pred_yield_t_ha",
+                  "actual_production_mt"]]
+    u = unmasked[[*UNIT_KEYS, "predicted_area_ha"]].rename(
+        columns={"predicted_area_ha": "fallback_area_ha"})
+    r = r.merge(u, on=UNIT_KEYS, how="left")
+    r["ape_pct"] = ((r["pred_yield_t_ha"] * r["fallback_area_ha"] - r["actual_production_mt"])
+                    .abs() / r["actual_production_mt"] * 100)
+    return r.sort_values(UNIT_KEYS).reset_index(drop=True)
+
+
+# Simplicity order for the original Requirement 6.1 rule (simplest first). B3 is not a
+# candidate under that rule: it was added after the B0/B2 results were seen.
+REQ61_SIMPLICITY = ("B0", "B1", "B2", "AnomalyRidge", "BoostedModel")
+
+
+def req61_selection(candidates: pd.DataFrame) -> dict[str, str]:
+    """Per crop: the model the original Req. 6.1 rule picks from `candidates` (selection.csv).
+
+    Rule: the simplest candidate (REQ61_SIMPLICITY; B3 excluded) whose MAE - MAE(B2) 95%
+    CI lies below zero (`qualifies`); B2 when none does.
+    """
+    rank = {m: i for i, m in enumerate(REQ61_SIMPLICITY)}
+    out = {}
+    for crop, t in candidates.groupby("crop", sort=True):
+        q = t.loc[t["qualifies"].astype(bool) & (t["candidate"] != "B3")]
+        q = q.assign(r=[rank.get(c.split(":")[0], len(rank)) for c in q["candidate"]])
+        out[str(crop)] = (str(q.sort_values(["r", "mae"]).iloc[0]["candidate"])
+                          if len(q) else REFERENCE)
+    return out
 
 
 # --- figures ------------------------------------------------------------------------
@@ -284,6 +363,16 @@ def write_report(cfg: Config, df: pd.DataFrame, res: SelectionResult,
       "CIs resample only "
       f"{len(f)} test years.")
     w("")
+    r61 = req61_selection(res.candidates)
+    w("**Deviation from Requirement 6.1.** The rule above (MODIS era decides, "
+      "lowest-MAE qualifying candidate, B3 added as a candidate) replaces the original "
+      "Requirement 6.1 (the simplest model whose MAE beats B2 with a 95% CI excluding "
+      "zero, else B2), and it was set after the results were seen. Applied to the same "
+      "candidate table (`reports/selection.csv`, without the post hoc B3, simplicity "
+      f"order {' < '.join(REQ61_SIMPLICITY)}), Requirement 6.1 would select "
+      + ", ".join(f"{c} → {r61[c]}" for c in sorted(r61)) + "; the shipped rule selects "
+      + ", ".join(f"{c} → {res.selected[c][0]}" for c in crops) + ".")
+    w("")
     for c in crops:
         t = res.candidates.loc[res.candidates["crop"] == c]
         tab = pd.DataFrame({
@@ -314,8 +403,87 @@ def write_report(cfg: Config, df: pd.DataFrame, res: SelectionResult,
           "time: refit with the latest PSA year before forecasting. Where that value is "
           "missing (reporting-unit regroupings), B0 falls back to B1, the unit-quarter "
           "mean.")
-    w("- The saved bundle holds the fitted model, its feature list, training period and "
-      "the 80% interval offsets from all out-of-fold residuals of that crop.")
+    w("- The saved bundle holds the fitted model, its feature list, training period, "
+      "the 80% interval offsets from all out-of-fold residuals of that crop, and "
+      "`area_model` (last year's PSA area, B0-style fallback). "
+      "`select.forecast_production` combines them for future quarters.")
+    w("")
+
+    w("## Predicted production")
+    w("")
+    lvl = pred["area_fallback_level"].value_counts()
+    n_nan = int(pred["predicted_area_ha"].isna().sum())
+    w("PSA publishes harvested area in the same release as production, so the area of "
+      "the predicted quarter is not known at forecast time. Predicted production = "
+      "predicted yield × `predicted_area_ha`, the same unit/crop/quarter area of year "
+      "Y−1. When Y−1 is missing the unit's own mean area for that crop and quarter is "
+      f"used ({int(pred['area_fallback'].sum())} of {len(pred)} rows had no Y−1 area; "
+      "`area_fallback_level` counts: "
+      + ", ".join(f"{k} {int(v)}" for k, v in lvl.sort_index().items()) + "). "
+      "**Choice:** when the unit has no own area history for that crop and quarter "
+      "(level crop_quarter_mean or coarser, e.g. a newly split unit), the other units' "
+      "mean area says nothing about it, so `predicted_area_ha` and `pred_production_mt` "
+      "are NaN (\"no area forecast\" in the app); predicted yield is kept. "
+      f"{n_nan} of {len(pred)} rows have no area forecast.")
+    w("")
+    w("The table uses only rows with an area forecast, split into all of them, rows "
+      "with last year's area, and rows with the unit-mean fallback. The \"actual area\" "
+      "columns multiply predicted yield by the PSA area of the same quarter; they are "
+      "not forecastable and only show how much error the area forecast adds. "
+      "Out-of-fold MODIS-era rows, MAE in t, MAPE and median APE in %:")
+    w("")
+    w(_md(production_errors(pred)))
+    w("")
+    if n_nan:
+        d_era = era_rows(df, res.era, cfg.pipeline.eras)
+        ua = predicted_area_oof(d_era, cfg.pipeline.eras[res.era].first_test_year,
+                                mask_no_history=False)
+        nf = no_area_forecast_rows(pred, d_era.loc[ua.index, UNIT_KEYS].assign(
+            predicted_area_ha=ua["predicted_area_ha"].to_numpy()))
+        ok = nf["actual_production_mt"] > 0
+        w(f"Had the crop-quarter mean area been used for these {n_nan} rows (as before "
+          "this choice), the selected model's production MAPE on them would be "
+          f"{nf.loc[ok, 'ape_pct'].mean():,.1f}% (median {nf.loc[ok, 'ape_pct'].median():,.1f}%, "
+          f"n = {int(ok.sum())}). The rows, with the area the fallback would have "
+          "predicted vs the PSA area:")
+        w("")
+        for (unit, crop, year), g in nf.groupby(["reporting_unit", "crop", "year"],
+                                                sort=True):
+            parts = [f"Q{int(r.quarter)} {r.fallback_area_ha:,.0f} vs {r.actual_area_ha:,.0f} ha"
+                     for r in g.itertuples()]
+            w(f"- {unit}, {crop}, {int(year)} ({g['area_fallback_level'].iloc[0]}): "
+              + "; ".join(parts))
+        w("")
+
+    w("## True out-of-sample test: the next PSA releases")
+    w("")
+    last_y = int(df["year"].max())
+    last_q = int(df.loc[df["year"] == last_y, "quarter"].max())
+    nxt_y, nxt_q = (last_y + 1, 1) if last_q == 4 else (last_y, last_q + 1)
+    w("Every result above, including the choice of B3, uses historical PSA data that was "
+      "seen while the models were developed, so all of it is in-sample for model "
+      "choice. The honest test is the PSA quarterly releases that come after the models "
+      f"are frozen, starting with {nxt_y} Q{nxt_q} (the data end at {last_y} Q{last_q}).")
+    w("")
+    w("How to score the selected models on new releases:")
+    w("")
+    w("1. Freeze the code version (git commit hash) and the saved `models/<crop>.joblib` "
+      "files before the release; do not reselect or retune afterwards.")
+    w("2. Before PSA publishes, record forecasts for the coming quarter for the selected "
+      "model, B0 and B2 (yield, predicted area, production, 80% interval) with a "
+      "timestamp and the commit hash, in an append-only forecasts log.")
+    w("3. When PSA publishes, compute per crop and per reporting unit the error of the "
+      "selected model, B0 and B2 on the new quarter(s), in t/ha and in production (t).")
+    w("4. Accumulate over releases. Report MAE vs B2 and vs B0 with a paired bootstrap "
+      "(resampling quarters) once there are enough new quarters for a usable CI; until "
+      "then report the per-quarter errors without a verdict.")
+    w("5. PSA revises preliminary figures. Score against the first-release values and "
+      "again against the revised values, and keep both.")
+    w("")
+    w("Next step (not built yet): a small `cropyield forecast` command that calls "
+      "`select.forecast_production` for the next quarter and appends rows to "
+      "`reports/forecasts.csv` (timestamp, commit, model, unit, crop, quarter, "
+      "predictions), plus a scorer that joins that log to new PSA releases.")
     w("")
 
     w("## All models by crop and era")

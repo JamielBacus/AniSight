@@ -46,6 +46,6 @@
   - Write `models/<crop>.joblib`, `data/processed/predictions.parquet` (out-of-fold history + 80% intervals) and `reports/phase2_results.md` with figures
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 9. Final review (subagent: critic)
+- [x] 9. Final review (subagent: critic)
   - Review the whole phase; check the results report's claims match `reports/experiments.csv`
   - _Requirements: 3.2, 6.1, 6.4_

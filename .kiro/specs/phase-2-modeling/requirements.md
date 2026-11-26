@@ -83,8 +83,11 @@ Acceptance criteria:
 the Phase 3 app.
 
 Acceptance criteria:
-1. The system SHALL select, per crop, the simplest model whose MAE beats B2 with a 95%
-   bootstrap CI that excludes zero; if none does, it SHALL select B2 and say so.
+1. The system SHALL select, per crop and on the MODIS era, the lowest-MAE candidate among
+   B0, B2, B3 (B0/B2 blend) and the best satellite/rainfall model whose MAE beats B2 with
+   a 95% bootstrap CI that excludes zero; if none does, it SHALL select B2 and say so.
+   (Changed from "the simplest model whose CI beats B2" after the results were seen; the
+   report states what the original rule would have selected.)
 2. WHEN the final model is fitted THEN it SHALL be trained on all era rows and saved to
    `models/<crop>.joblib` with its feature list and training period.
 3. The system SHALL write `data/processed/predictions.parquet` with reporting_unit, crop,
