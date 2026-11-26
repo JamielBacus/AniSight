@@ -9,10 +9,12 @@ permissions:
   rules:
     - capability: fs_write
       match: ["src/cropyield/features.py", "src/cropyield/models/**", "src/cropyield/cli.py",
+             "src/cropyield/export.py",
              "tests/**", "reports/**", "configs/**"]
       effect: allow
     - capability: shell
-      match: ["pytest*", "python -m pytest*", "cropyield evaluate*", "cropyield select*"]
+      match: ["pytest*", "python -m pytest*", "cropyield evaluate*", "cropyield select*",
+             "cropyield forecast*", "cropyield score*", "cropyield export*"]
       effect: allow
     - capability: shell
       match: ["rm -rf *"]
@@ -32,4 +34,6 @@ Responsibilities:
 
 The modeling table is small (~1,500 rows): you may run `cropyield evaluate` and
 `cropyield select` yourself (seconds). Never run satellite or rainfall downloads; give the
-user the exact command instead. Phase 2 plan: `.kiro/specs/phase-2-modeling/`.
+user the exact command instead. Phase 2 plan: `.kiro/specs/phase-2-modeling/`. Phase 3 (forecast logging,
+live scoring, app data export): `.kiro/specs/phase-3-app/`. You may run `cropyield
+forecast`, `score` and `export` yourself; they are fast.
