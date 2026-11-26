@@ -25,10 +25,10 @@
 - [x] 4. App skeleton and map (subagent: web-dev)
   - `app/index.html`, `css/style.css`, `js/main.js`, `js/map.js`, vendored Leaflet and Chart.js (pinned, with licences)
   - Crop and quarter controls, URL hash state, diverging colour scale with legend, combined units, works without tiles
-  - `js/lib/format.js` with `node --test` tests
+  - `js/lib/format.js` with `node --test 'app/tests/*.test.mjs'` tests
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 7.2, 7.3_
 
-- [-] 5. Province detail panel (subagent: web-dev)
+- [x] 5. Province detail panel (subagent: web-dev)
   - History chart with 80% band and B0/B2 toggles; latest forecast card with production note; conditions-vs-normal card; flags
   - Keyboard-accessible province list as an alternative to the map
   - _Requirements: 5.1, 5.2, 5.3, 5.4_

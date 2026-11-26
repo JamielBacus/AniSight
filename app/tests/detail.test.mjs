@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   formatDate, quarterSpan, sameQuarterLastYear, buildChartSeries, chartTableRows, chartSummary,
   flagMessages, forecastFlags, indexAnomWords, formatMm, conditionsLines, regroupNotes,
-  forecastCard, backtestSentence,
+  forecastCard, backtestSentence, partialWindowFlag,
 } from '../js/lib/detail.js';
 
 const row = (y, q, extra = {}) => ({
@@ -167,4 +167,13 @@ test('backtestSentence', () => {
   assert.match(backtestSentence(row(2026, 3, { actual: 5 })), /above the 80% range/);
   assert.match(backtestSentence(row(2013, 1, { lo: null, hi: null })), /no 80% range for this quarter/);
   assert.equal(backtestSentence(null), null);
+});
+
+test('partialWindowFlag: short pointer only for partial windows', () => {
+  const t = partialWindowFlag({ partial_window: true, data_through: '2026-09-30' });
+  assert.match(t, /through 30 Sep 2026/);
+  assert.match(t, /does not use it/);
+  assert.doesNotMatch(t, /satellite-predicted/i);
+  assert.equal(partialWindowFlag({ partial_window: false }), null);
+  assert.equal(partialWindowFlag(null), null);
 });

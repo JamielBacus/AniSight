@@ -211,6 +211,14 @@ export function conditionsLines(cond) {
   return { lines, notes };
 }
 
+/** Short flag line for a partial satellite window (the full sentence is in the conditions card). */
+export function partialWindowFlag(cond) {
+  if (!cond?.partial_window) return null;
+  const through = formatDate(cond.data_through);
+  return `Partial window: satellite context uses imagery through ${through ?? 'an earlier date'} only `
+    + '(see "Conditions vs normal"). The forecast itself does not use it.';
+}
+
 // ---------------------------------------------------------------- regroupings
 
 /**

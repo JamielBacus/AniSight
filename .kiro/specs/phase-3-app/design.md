@@ -74,10 +74,11 @@ app/
   assets/figures/       copied Phase 2 figures
   vendor/               leaflet, chart.js (pinned, minified, with LICENSE files)
   vercel.json           headers: short cache for /data/*, long cache for /vendor/*
-  tests/format.test.mjs node --test
+  tests/format.test.mjs node --test 'app/tests/*.test.mjs'
 ```
-- **Map:** Leaflet with a light basemap (CARTO Positron or OpenStreetMap standard, with
-  attribution). Provinces drawn from `units.geojson`; fill = diverging scale
+- **Map:** Leaflet with OpenStreetMap standard tiles (tile.openstreetmap.org, with
+  attribution; subject to the OSMF Tile Usage Policy). CARTO Positron was the first choice
+  but now requires an API key. Provinces drawn from `units.geojson`; fill = diverging scale
   (e.g. ColorBrewer RdYlBu, clamped at ±25%); grey for missing. Works without tiles.
 - **Chart:** Chart.js line chart: actual (dots), B3 (line), 80% band (filled area),
   optional B0/B2 (dashed). Mark forecast quarter distinctly.
@@ -106,5 +107,5 @@ app/
   `forecast_production`; `build_predictions` leakage test; scoring with first-seen vs revised
   actuals; export JSON is valid, NaN-free, under the size budget, and its findings numbers
   equal `selection.csv`.
-- JavaScript: `node --test app/tests` for `format.js`.
+- JavaScript: `node --test 'app/tests/*.test.mjs'` for `format.js`.
 - Manual checklist in tasks: phone width, broken-tiles mode, keyboard navigation.

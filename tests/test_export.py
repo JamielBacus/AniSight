@@ -463,6 +463,17 @@ def test_meta(setup):
         assert src in names
 
 
+def test_meta_basemap_is_osm_without_carto(setup):
+    _, app_dir = _export(setup)
+    text = (app_dir / "data" / "meta.json").read_text(encoding="utf-8")
+    assert "carto" not in text.lower()
+    m = json.loads(text)
+    [osm] = [s for s in m["sources"] if s["name"] == "OpenStreetMap standard tiles"]
+    assert osm["attribution"] == "© OpenStreetMap contributors"
+    assert "ODbL" in osm["licence"] and osm["url"] == "https://www.openstreetmap.org/copyright"
+    assert "https://operations.osmfoundation.org/policies/tiles/" in osm["note"]
+
+
 def test_cli_lists_export():
     res = CliRunner().invoke(app, ["export", "--help"])
     assert res.exit_code == 0 and "app/data" in res.output

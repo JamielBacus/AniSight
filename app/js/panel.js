@@ -5,7 +5,7 @@
 import { CROP_LABELS, quarterLabel, parseQuarter } from './lib/format.js';
 import {
   buildChartSeries, chartTableRows, chartSummary, flagMessages, forecastFlags,
-  conditionsLines, regroupNotes, forecastCard, backtestSentence,
+  conditionsLines, regroupNotes, forecastCard, backtestSentence, partialWindowFlag,
 } from './lib/detail.js';
 
 // Okabe-Ito palette (colour-blind safe); every series also differs by line/point style.
@@ -175,9 +175,8 @@ export function createPanel(el, { meta, forecast, predictions, units, onClose })
     const items = [];
     if (isForecastQuarter) {
       for (const m of flagMessages(forecastFlags(fRow), flagDefs)) items.push(m.text);
-      if (fRow?.conditions?.partial_window) {
-        items.push(conditionsLines(fRow.conditions).notes[0]);
-      }
+      const partial = partialWindowFlag(fRow?.conditions);
+      if (partial) items.push(partial);
     } else {
       for (const m of flagMessages(row?.flags, flagDefs)) items.push(m.text);
     }

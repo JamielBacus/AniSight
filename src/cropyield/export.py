@@ -115,11 +115,13 @@ SOURCES: list[dict[str, str]] = [
      "url": "https://planetarycomputer.microsoft.com/",
      "licence": "access service; each dataset keeps its own licence",
      "attribution": "Data accessed through the Microsoft Planetary Computer"},
-    {"name": "Basemap: CARTO Positron / OpenStreetMap",
+    {"name": "OpenStreetMap standard tiles",
      "use": "background map tiles",
-     "url": "https://carto.com/attributions",
-     "licence": "OpenStreetMap data ODbL; CARTO basemap terms",
-     "attribution": "© OpenStreetMap contributors © CARTO"},
+     "url": "https://www.openstreetmap.org/copyright",
+     "licence": "OpenStreetMap data: ODbL (https://www.openstreetmap.org/copyright)",
+     "attribution": "© OpenStreetMap contributors",
+     "note": "Tiles from tile.openstreetmap.org are subject to the OSMF Tile Usage "
+             "Policy (https://operations.osmfoundation.org/policies/tiles/)"},
 ]
 
 

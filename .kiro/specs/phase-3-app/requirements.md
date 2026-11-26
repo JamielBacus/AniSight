@@ -117,7 +117,7 @@ Acceptance criteria:
 2. The site SHALL have no build step: plain ES modules, with third-party libraries vendored
    in `app/vendor/` at pinned versions.
 3. Pure JavaScript helpers (formatting, colour scale, anomaly wording) SHALL have tests run
-   with `node --test`.
+   with `node --test 'app/tests/*.test.mjs'`.
 4. Vercel SHALL serve the `app/` folder (Root Directory = `app`, no build command), and the
    README SHALL include the quarterly update runbook: pipeline → `select` → `forecast` →
    `export` → commit → push.
